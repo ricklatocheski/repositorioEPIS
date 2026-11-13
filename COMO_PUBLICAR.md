@@ -6,7 +6,7 @@
 4. Confira **Build command: `npm run build`** e **Publish directory: `dist`**.
 5. Publique. O projeto está preparado para provisionar o Netlify Database e aplicar a migração SQL no deploy. Se solicitado, confira/ative em **Data & Storage → Database**, observando as condições e o consumo do plano.
 6. Depois da publicação, acesse `https://SEU-SITE.netlify.app/api/health`. Deve aparecer `"ok":true`.
-7. Abra o sistema em dois dispositivos, cadastre uma transportadora e clique em **Atualizar dados** no segundo para conferir o compartilhamento.
+7. Abra o sistema em dois dispositivos, cadastre uma transportadora e aguarde até cinco segundos no segundo, com a página visível, para conferir a atualização automática.
 
 **Não arraste somente o ZIP para o Netlify Drop.** Isso entrega a parte estática sem executar o build necessário à API e ao banco. O caminho completo é a importação pelo GitHub.
 

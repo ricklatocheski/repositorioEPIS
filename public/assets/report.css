@@ -1,0 +1,89 @@
+body {
+  font: 11px Arial;
+  padding: 12px;
+  color: #222;
+}
+h1 {
+  font-size: 19px;
+}
+table {
+  border-collapse: collapse;
+  width: 100%;
+}
+th,
+td {
+  border: 1px solid #999;
+  padding: 5px;
+  text-align: left;
+  overflow-wrap: anywhere;
+}
+th {
+  background: #eee;
+}
+tr {
+  break-inside: avoid;
+}
+@page {
+  size: A4 landscape;
+  margin: 9mm;
+}
+.group-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: #14283dbb;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 15px;
+  z-index: 1000;
+}
+.modal-overlay.open {
+  display: flex;
+}
+.modal {
+  background: white;
+  border-radius: 12px;
+  padding: 20px;
+  width: min(950px, 100%);
+  max-height: 92vh;
+  overflow: auto;
+}
+.return-item {
+  display: grid;
+  grid-template-columns: minmax(160px, 2fr) repeat(3, minmax(85px, 1fr));
+  gap: 10px;
+  align-items: end;
+  padding: 12px;
+  border-bottom: 1px solid #e2e9ed;
+}
+.return-item p {
+  margin: 4px 0;
+}
+.return-item input {
+  margin-top: 5px;
+}
+@media (max-width: 650px) {
+  .return-item {
+    grid-template-columns: 1fr 1fr;
+  }
+  .return-item > div:first-child {
+    grid-column: 1/-1;
+  }
+}
+.small {
+  font-size: 12px;
+}
+.edit-actions {
+  white-space: nowrap;
+}
+@media print {
+  nav,
+  .warning {
+    display: none;
+  }
+}

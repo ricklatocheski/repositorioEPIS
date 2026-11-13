@@ -417,7 +417,7 @@ function printReport() {
     return;
   }
   w.document.write(
-    '<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><title>Relatório de EPIs</title></head><body><h1>Controle de EPIs — Relatório de empréstimos</h1><p>Período: ' +
+    '<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><title>Relatório de EPIs</title><link rel="stylesheet" href="/assets/report.css"></head><body><h1>Controle de EPIs — Relatório de empréstimos</h1><p>Período: ' +
       safe(date) +
       " | Registros: " +
       linhas.length +
@@ -522,9 +522,16 @@ $("loanForm").onsubmit = async (e) => {
     lost: 0,
     returns: [],
   }));
+  const beforeLoan = JSON.stringify(db);
   db.loans.push(...novos);
+  ensureRegistry();
+  const driver = db.registries.motoristas.find(
+    (r) => r.id === novos[0].driverId,
+  );
+  if (driver && v.whatsapp) driver.whatsapp = v.whatsapp;
   if (!(await save())) {
-    db.loans.splice(-novos.length);
+    db = JSON.parse(beforeLoan);
+    render();
     return;
   }
   e.target.reset();
@@ -946,7 +953,7 @@ render = function () {
   originalRender();
   renderRegistry();
   renderRegistryOptions();
-  $("unitLabel").textContent = db.settings.unit || "Controle de EPIs";
+
   $("stockOverview").innerHTML = db.stock
     .filter((s) => !s.arquivado)
     .map((s) => {
@@ -1019,6 +1026,46 @@ function renderRegistryOptions() {
       .map((r) => '<option value="' + safe(r.name) + '"></option>')
       .join("");
 }
+function normalizeWhatsapp(value) {
+  const text = String(value || "").trim();
+  let digits = text.replace(/\D/g, "");
+  if (!digits) return "";
+  if (!text.startsWith("+") && (digits.length === 10 || digits.length === 11))
+    digits = "55" + digits;
+  return digits;
+}
+function validWhatsapp(value) {
+  return /^[1-9][0-9]{7,14}$/.test(value);
+}
+function formatWhatsapp(value) {
+  const digits = String(value || "");
+  if (!digits) return "";
+  if (/^55[0-9]{10,11}$/.test(digits)) {
+    const national = digits.slice(2);
+    return (
+      "(" +
+      national.slice(0, 2) +
+      ") " +
+      national.slice(2, -4) +
+      "-" +
+      national.slice(-4)
+    );
+  }
+  return "+" + digits;
+}
+function whatsappLink(value) {
+  if (!value || !validWhatsapp(value)) return "—";
+  return (
+    '<a class="whatsapp-link" href="https://wa.me/' +
+    value +
+    '" target="_blank" rel="noopener noreferrer" aria-label="Abrir WhatsApp do motorista ' +
+    safe(formatWhatsapp(value)) +
+    '">' +
+    safe(formatWhatsapp(value)) +
+    " ↗</a>"
+  );
+}
+
 function registryTab(type) {
   registryType = type;
   $("registrySearch").value = "";
@@ -1067,13 +1114,21 @@ function renderRegistry() {
     .sort((a, b) => a.name.localeCompare(b.name, "pt-BR"));
   $("registryTable").innerHTML = records.length
     ? rows([
-        ["Nome / placa", "Transportadora", "Observações", "Situação", "Ações"],
+        [
+          "Nome / placa",
+          "Transportadora",
+          ...(registryType === "motoristas" ? ["WhatsApp"] : []),
+          "Observações",
+          "Situação",
+          "Ações",
+        ],
         ...records.map((r) => [
           safe(r.name),
           safe(
             db.registries.transportadoras.find((c) => c.id === r.carrierId)
               ?.name || "—",
           ),
+          ...(registryType === "motoristas" ? [whatsappLink(r.whatsapp)] : []),
           safe(r.notes || "—"),
           '<span class="tag ' +
             (r.active ? "ok" : "") +
@@ -1127,6 +1182,8 @@ function openRegistry(id) {
       .join("");
   $("registryCarrier").value = r?.carrierId || "";
   $("registryNotes").value = r?.notes || "";
+  $("registryWhatsappLabel").hidden = registryType !== "motoristas";
+  $("registryWhatsapp").value = formatWhatsapp(r?.whatsapp || "");
   $("registryModal").classList.add("open");
   $("registryName").focus();
 }
@@ -1152,6 +1209,12 @@ $("registryForm").onsubmit = async (e) => {
       ? plate($("registryName").value)
       : $("registryName").value.trim().replace(/\s+/g, " ");
   if (!name) return;
+  const whatsapp =
+    registryType === "motoristas"
+      ? normalizeWhatsapp($("registryWhatsapp").value)
+      : "";
+  if (registryType === "motoristas" && $("registryWhatsapp").value.trim() && !validWhatsapp(whatsapp))
+    return alert("Informe um WhatsApp válido com DDD ou código internacional.");
   const duplicate = db.registries[registryType].find(
     (r) => r.id !== registryEdit && normalize(r.name) === normalize(name),
   );
@@ -1165,6 +1228,7 @@ $("registryForm").onsubmit = async (e) => {
       r.carrierId =
         registryType === "transportadoras" ? "" : $("registryCarrier").value;
       r.notes = $("registryNotes").value.trim();
+      if (registryType === "motoristas") r.whatsapp = whatsapp;
     })
   ) {
     closeRegistry();
@@ -1241,6 +1305,12 @@ $("loanForm").onsubmit = async (e) => {
       );
     }
   }
+  const loanWhatsapp = normalizeWhatsapp(f.elements.whatsapp.value);
+  if (f.elements.whatsapp.value.trim() && !validWhatsapp(loanWhatsapp)) {
+    e.preventDefault();
+    return alert("Informe um WhatsApp válido com DDD ou código internacional.");
+  }
+  f.elements.whatsapp.value = loanWhatsapp;
   await originalLoanSubmit(e);
 };
 
@@ -1257,6 +1327,8 @@ for (const [field, type] of [
       (c) => c.id === r?.carrierId && c.active,
     );
     if (c) $("loanForm").elements.transportadora.value = c.name;
+    if (field === "motorista")
+      $("loanForm").elements.whatsapp.value = formatWhatsapp(r?.whatsapp || "");
   });
 function setReportMonth() {
   const d = new Date(),
@@ -1355,6 +1427,14 @@ function validateBackup(data) {
         )
           throw Error("Vínculo de transportadora inválido");
   }
+  if (data.registries)
+    for (const r of data.registries.motoristas || [])
+      if (
+        r.whatsapp !== undefined &&
+        (typeof r.whatsapp !== "string" ||
+          (r.whatsapp && !validWhatsapp(r.whatsapp)))
+      )
+        throw Error("WhatsApp inválido no cadastro");
   if (
     data.settings !== undefined &&
     (!data.settings ||
@@ -1446,16 +1526,17 @@ let revision = null,
   isSaving = false,
   needsRefresh = false,
   nextOperation = "update";
+let refreshing = false,
+  stateGeneration = 0,
+  deferredShared = null;
 function lockUI(locked) {
   document
     .querySelectorAll("main,.sidebar,.modal-overlay")
     .forEach((el) => (el.inert = locked));
 }
 function syncStatus(message, bad = false) {
-  $("syncStatus").textContent = message;
-  document
-    .querySelectorAll(".connection-dot")
-    .forEach((el) => el.classList.toggle("offline", bad));
+  $("syncError").hidden = !bad;
+  if (bad) $("syncErrorMessage").textContent = message;
 }
 async function apiRequest(method, body) {
   const options = {
@@ -1474,7 +1555,7 @@ async function apiRequest(method, body) {
     result = await response.json();
   } catch {
     throw new Error(
-      "A API não respondeu corretamente. Publique pelo GitHub no Netlify para ativar as Functions.",
+      "Não foi possível acessar os registros. Tente novamente em instantes.",
     );
   }
   if (!response.ok) {
@@ -1486,46 +1567,74 @@ async function apiRequest(method, body) {
   }
   return result;
 }
-async function refreshShared() {
-  if (isSaving) return;
-  lockUI(true);
+function applyShared(data) {
+  validateBackup(data.state);
+  db = data.state;
+  ensureRegistry();
+  revision = data.revision;
+  stateGeneration++;
+  needsRefresh = false;
+  sharedReady = true;
+  deferredShared = null;
+  render();
+  $("networkGate").hidden = true;
+  syncStatus("");
+}
+function flushDeferred() {
+  if (
+    !deferredShared ||
+    isSaving ||
+    document.querySelector(".modal-overlay.open")
+  )
+    return;
+  if (deferredShared.revision > revision) applyShared(deferredShared);
+  else deferredShared = null;
+}
+async function refreshShared(automatic = false) {
+  if (isSaving || refreshing) return;
+  refreshing = true;
+  const generation = stateGeneration;
+  if (!automatic) lockUI(true);
   $("gateRetry").hidden = true;
   try {
     const data = await apiRequest("GET");
-    validateBackup(data.state);
-    db = data.state;
-    ensureRegistry();
-    revision = data.revision;
-    needsRefresh = false;
-    sharedReady = true;
-    render();
-    $("networkGate").hidden = true;
-    syncStatus(
-      "Banco conectado · revisão " +
-        revision +
-        " · atualizado às " +
-        new Date().toLocaleTimeString("pt-BR"),
-    );
+    // A response started before a local save must never replace that save.
+    if (isSaving || stateGeneration !== generation) return;
+    if (automatic && sharedReady && data.revision === revision) {
+      needsRefresh = false;
+      syncStatus("");
+      return;
+    }
+    if (automatic && document.querySelector(".modal-overlay.open")) {
+      deferredShared = data;
+      return;
+    }
+    applyShared(data);
   } catch (error) {
     if (!sharedReady) {
       $("networkGate").hidden = false;
       $("gateTitle").textContent = "Não foi possível conectar";
       $("gateMessage").textContent = error.message;
       $("gateRetry").hidden = false;
-    }
-    syncStatus("Sem conexão com o banco. Clique em Atualizar dados.", true);
-    if (sharedReady) alert(error.message);
+    } else
+      syncStatus(
+        "Não foi possível atualizar os registros. A conexão será tentada novamente automaticamente.",
+        true,
+      );
   } finally {
-    lockUI(!sharedReady);
+    refreshing = false;
+    if (!automatic) lockUI(!sharedReady);
   }
 }
 async function save() {
   if (!sharedReady || needsRefresh || isSaving) {
-    alert("Atualize os dados do banco antes de salvar.");
+    alert("Aguarde a atualização dos registros antes de salvar.");
+    setTimeout(() => refreshShared(), 0);
     return false;
   }
   ensureRegistry();
   isSaving = true;
+  stateGeneration++;
   document.body.dataset.saving = "true";
   $("networkProgress").hidden = false;
   lockUI(true);
@@ -1546,32 +1655,37 @@ async function save() {
     }
     revision = result.revision;
     render();
-    syncStatus(
-      "Salvo no banco · revisão " +
-        revision +
-        " · " +
-        new Date().toLocaleTimeString("pt-BR"),
-    );
+    syncStatus("");
     return true;
   } catch (error) {
     needsRefresh = true;
     syncStatus(
-      "Operação não confirmada. Atualize os dados antes de continuar.",
+      "A alteração não foi confirmada. Os registros serão atualizados para você conferir e tentar novamente.",
       true,
     );
     alert(
       error.message +
-        "\n\nNenhuma confirmação de sucesso foi emitida. Clique em Atualizar dados para conferir o estado do banco antes de repetir.",
+        "\n\nOs registros serão atualizados automaticamente. Confira os dados antes de tentar novamente.",
     );
+    // Allow the caller to roll back its draft before applying authoritative data.
+    setTimeout(() => {
+      if (error.status === 409) {
+        document
+          .querySelectorAll(".modal-overlay.open")
+          .forEach((el) => el.classList.remove("open"));
+      }
+      refreshShared();
+    }, 0);
     return false;
   } finally {
     isSaving = false;
+    stateGeneration++;
     document.body.dataset.saving = "false";
     $("networkProgress").hidden = true;
     lockUI(false);
+    setTimeout(flushDeferred, 0);
   }
 }
-// Prevent double submission while an asynchronous transaction is being confirmed.
 for (const event of ["click", "submit"])
   document.addEventListener(
     event,
@@ -1583,31 +1697,25 @@ for (const event of ["click", "submit"])
     },
     true,
   );
-// Notify about concurrent changes without discarding a form the operator is filling.
-setInterval(async () => {
-  if (!sharedReady || isSaving || needsRefresh || document.hidden) return;
-  try {
-    const data = await apiRequest("GET");
-    if (data.revision !== revision)
-      syncStatus(
-        "Há alterações de outro computador. Clique em Atualizar dados.",
-        true,
-      );
-  } catch {
-    syncStatus("Conexão indisponível. Confira a rede antes de salvar.", true);
-  }
-}, 60000);
-window.addEventListener("online", () =>
-  syncStatus(
-    "Rede disponível. Clique em Atualizar dados para conferir o banco.",
-  ),
-);
+// Poll automatically without changing the fields the operator is filling.
+setInterval(() => {
+  if (sharedReady && !isSaving && !document.hidden) refreshShared(true);
+}, 5000);
+for (const modal of document.querySelectorAll(".modal-overlay"))
+  new MutationObserver(() => setTimeout(flushDeferred, 0)).observe(modal, {
+    attributes: true,
+    attributeFilter: ["class"],
+  });
+window.addEventListener("online", () => refreshShared(true));
 window.addEventListener("offline", () =>
   syncStatus(
-    "Sem internet. Os registros precisam de conexão para serem salvos.",
+    "Sem conexão. Os registros serão atualizados automaticamente quando a rede voltar.",
     true,
   ),
 );
+document.addEventListener("visibilitychange", () => {
+  if (!document.hidden) refreshShared(true);
+});
 window.addEventListener("beforeunload", (e) => {
   if (isSaving) {
     e.preventDefault();

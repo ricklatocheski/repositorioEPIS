@@ -20,7 +20,7 @@ O projeto inclui o pacote `@netlify/database` e a migração SQL. Em contas comp
 
 Não use o envio de ZIP por arrastar e soltar para publicar este sistema completo: essa modalidade publica arquivos estáticos, sem executar o build e preparar a API. O ZIP é o código-fonte completo para guardar, editar ou importar no repositório. Para a publicação com banco, use a integração Git acima.
 
-Depois do deploy, abra `/api/health`: a resposta deve informar `ok: true` e `storage: "postgresql"`. Abra o site em dois dispositivos e confirme que um cadastro criado no primeiro aparece no segundo após **Atualizar dados**.
+Depois do deploy, abra `/api/health`: a resposta deve informar `ok: true` e `storage: "postgresql"`. Abra o site em dois dispositivos e confirme que um cadastro criado no primeiro aparece automaticamente no segundo em até cinco segundos, com a página visível. Não é necessário atualizar manualmente.
 
 Documentação oficial: [Netlify Database — configuração manual](https://docs.netlify.com/build/data-and-storage/netlify-database/getting-started/), [migrações](https://docs.netlify.com/build/data-and-storage/netlify-database/migrations/).
 
@@ -47,7 +47,8 @@ O `npm run build` gera a interface em `dist/`. As funções são empacotadas pel
 - Painel com disponibilidade e pendências, filtros e relatórios por período, exportação CSV, Excel XML `.xls` e impressão para PDF.
 - Preferências de unidade e funcionário padrão, salvas no banco compartilhado.
 - Backup JSON completo e restauração dos formatos atual e anterior.
-- Avisos de conexão, confirmação de gravação, bloqueio de duplo envio e conflito entre dispositivos.
+- Atualização automática a cada cinco segundos, preservando os campos em preenchimento. Durante uma janela de edição aberta, alterações recebidas aguardam seu fechamento. Alertas aparecem somente em falhas; bloqueio de duplo envio e conflitos continuam ativos.
+- WhatsApp opcional no cadastro do motorista e no novo empréstimo, com preenchimento automático e link para abrir a conversa. Nenhuma mensagem é enviada automaticamente.
 - Layout responsivo, foco nos diálogos e operação por teclado.
 
 Os estoques iniciais estão zerados. Informe a contagem real antes do primeiro empréstimo.

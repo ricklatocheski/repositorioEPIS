@@ -2,10 +2,11 @@
 
 Validação realizada em 13/11/2026:
 
-- 11 testes automatizados da API aprovados, usando PostgreSQL em memória via PGlite.
+- 12 testes automatizados da API aprovados, usando PostgreSQL em memória via PGlite, incluindo persistência e validação do WhatsApp.
 - Fluxo no Chrome aprovado: cadastros, vínculo de transportadora, estoque inicial, empréstimo, devolução parcial com perda, edição sem recriar cadastro antigo e persistência após recarregar.
-- Dois contextos de navegador independentes consultaram a mesma base pela API. Uma gravação com revisão desatualizada foi rejeitada sem apagar a atualização anterior.
-- Falha de conexão recusou a gravação e exigiu atualização dos dados, sem emitir confirmação de sucesso.
+- Dois contextos de navegador independentes consultaram a mesma base pela API. As alterações foram recebidas automaticamente, preservando um formulário em preenchimento. Uma gravação com revisão desatualizada foi rejeitada sem apagar a atualização anterior e os dados foram recarregados automaticamente.
+- Falha de conexão recusou a gravação, sem emitir confirmação de sucesso, e o sistema retomou a atualização automaticamente quando a rede voltou.
+- Textos de conexão/revisão, identificação no canto superior direito, legenda do menu, bloco inferior da barra lateral, rodapé de autoria e banner promocional removidos conforme solicitado.
 - Restauração de backup e exportação CSV verificadas.
 - Todas as telas verificadas em largura móvel de 390 px, sem transbordamento horizontal da página.
 - `npm run build` aprovado.

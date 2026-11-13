@@ -246,3 +246,20 @@ test("indisponibilidade do banco retorna mensagem útil e 503", async () => {
   assert.equal(result.status, 503);
   assert.ok((await result.json()).error.includes("Netlify Database"));
 });
+test("WhatsApp opcional é persistido e valores inválidos são rejeitados", async () => {
+  const state = initialState();
+  state.registries.motoristas.push({
+    id: randomUUID(),
+    name: "Motorista com WhatsApp",
+    active: true,
+    whatsapp: "5549999991234",
+  });
+  await commit(state);
+  assert.equal(
+    (await repository.read()).state.registries.motoristas[0].whatsapp,
+    "5549999991234",
+  );
+  const invalid = structuredClone(state);
+  invalid.registries.motoristas[0].whatsapp = "javascript:alert(1)";
+  await assert.rejects(() => commit(invalid), /WhatsApp inválido/);
+});

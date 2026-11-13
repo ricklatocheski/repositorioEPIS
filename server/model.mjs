@@ -162,6 +162,13 @@ export function validateState(state) {
             identifier(r.carrierId)),
         "Vínculo ou observação inválida.",
       );
+      check(
+        r.whatsapp === undefined ||
+          r.whatsapp === "" ||
+          (typeof r.whatsapp === "string" &&
+            /^[1-9][0-9]{7,14}$/.test(r.whatsapp)),
+        "WhatsApp inválido. Informe o código do país e DDD.",
+      );
       allIds.add(r.id);
       unique.add(normalize(r.name));
       byType[type].set(r.id, r);

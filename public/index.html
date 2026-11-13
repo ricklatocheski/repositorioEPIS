@@ -9,7 +9,6 @@
   <body>
     <aside class="sidebar">
       <div class="brand" role="img" aria-label="Guararapes"></div>
-      <div class="side-label">GESTÃO OPERACIONAL</div>
       <nav aria-label="Navegação principal">
         <button data-tab="painel" onclick="tab('painel')">
           <span aria-hidden="true">◫</span>Visão geral</button
@@ -29,23 +28,15 @@
           <span aria-hidden="true">⚙</span>Preferências
         </button>
       </nav>
-      <div class="sidebar-bottom">
-        <span class="connection-dot"></span> Banco compartilhado<br /><small
-          >Controle de EPIs · Balança</small
-        >
-      </div>
     </aside>
     <header class="topbar">
-      <span>Operações <span class="slash">/</span> Balança</span
-      ><span id="unitLabel">Controle de EPIs</span>
+      <span>Operações <span class="slash">/</span> Balança</span>
     </header>
     <main>
-      <div class="local-notice">
-        <span class="connection-dot"></span
-        ><span id="syncStatus" role="status"
-          >Conectando ao banco compartilhado…</span
+      <div id="syncError" class="sync-error" role="alert" hidden>
+        <span id="syncErrorMessage"></span
         ><button class="text-button" onclick="refreshShared()">
-          ↻ Atualizar dados
+          Tentar novamente
         </button>
       </div>
       <section id="painel" class="active">
@@ -56,14 +47,6 @@
             <p>Acompanhe os EPIs da balança, da entrega à devolução.</p>
           </div>
           <button onclick="tab('emprestar')">＋ Novo empréstimo</button>
-        </div>
-        <div class="overview-banner">
-          <div>
-            <span class="eyebrow">OPERAÇÃO DA BALANÇA</span>
-            <h2>Da entrega à devolução,<br />cada EPI sob controle.</h2>
-            <p>Empréstimos, cadastros e estoque no mesmo lugar.</p>
-          </div>
-          <div class="banner-mark" aria-hidden="true">↗</div>
         </div>
         <div id="cards" class="cards"></div>
         <div class="panel">
@@ -119,6 +102,16 @@
                 maxlength="8"
                 style="text-transform: uppercase"
             /></label>
+            <label
+              >WhatsApp do motorista<input
+                name="whatsapp"
+                type="tel"
+                autocomplete="tel"
+                inputmode="tel"
+                maxlength="25"
+                placeholder="(49) 99999-9999"
+              /><small class="muted">Opcional · informe o DDD.</small></label
+            >
             <div class="wide">
               <label>EPIs do empréstimo *</label>
               <div id="itensEmprestimo"></div>
@@ -427,6 +420,17 @@
               >Transportadora vinculada<select
                 id="registryCarrier"
               ></select></label
+            ><label class="wide" id="registryWhatsappLabel" hidden
+              >WhatsApp do motorista<input
+                id="registryWhatsapp"
+                type="tel"
+                autocomplete="tel"
+                inputmode="tel"
+                maxlength="25"
+                placeholder="(49) 99999-9999"
+              /><small class="muted"
+                >Opcional · números brasileiros recebem o código +55.</small
+              ></label
             ><label class="wide"
               >Observações<input id="registryNotes" maxlength="250"
             /></label>
@@ -522,12 +526,6 @@
         </form>
       </div>
     </div>
-    <footer>
-      Controle de EPIs · Balança
-      <span
-        >Desenvolvido por Aguinaldo Fernando de Jesus — Analista Fiscal</span
-      >
-    </footer>
     <script defer src="/assets/app.js"></script>
     <div id="networkGate" role="alert">
       <div>

@@ -5,7 +5,7 @@ import { mkdir } from "node:fs/promises";
 import { initialState } from "../server/model.mjs";
 
 // Uses the local development server only, never a production site.
-const base = "http://localhost:8888";
+const base = "http://localhost:" + (process.env.TEST_PORT || "8888");
 const existing = await (await fetch(base + "/api/state")).json();
 // Refuse to erase a local database that already contains operational records.
 assert.equal(
@@ -52,6 +52,15 @@ const settled = async () => {
 try {
   await page.goto(base);
   await ready();
+  assert.equal(
+    await page
+      .locator(
+        ".sidebar-bottom,.side-label,#unitLabel,#syncStatus,.overview-banner,footer",
+      )
+      .count(),
+    0,
+  );
+  assert.equal(await page.locator("#syncError").isVisible(), false);
   assert.equal(await page.evaluate(() => revision), 1 + existing.revision);
   await page.evaluate(() => tab("cadastros"));
   await page
@@ -67,6 +76,11 @@ try {
     .getByRole("button", { name: "＋ Novo cadastro", exact: true })
     .click();
   await page.locator("#registryName").fill("Motorista de Teste");
+  await page.locator("#registryWhatsapp").fill("abc");
+  await page.getByRole("button",{name:"Salvar cadastro",exact:true}).click();
+  assert.equal(await page.locator('#registryModal').evaluate(el=>el.classList.contains('open')),true);
+  assert.equal(await page.evaluate(()=>db.registries.motoristas.length),0);
+  await page.locator("#registryWhatsapp").fill("(49) 99999-1234");
   await page
     .locator("#registryCarrier")
     .selectOption({ label: "Transportes Floresta" });
@@ -74,6 +88,7 @@ try {
     .getByRole("button", { name: "Salvar cadastro", exact: true })
     .click();
   await settled();
+  assert.equal(await page.locator('a.whatsapp-link').getAttribute('href'),'https://wa.me/5549999991234');
   await page.evaluate(() => tab("estoque"));
   await page.locator("#stockForm [name=nome]").fill("Capacete");
   await page.locator("#stockForm [name=qtd]").fill("10");
@@ -82,6 +97,10 @@ try {
   await page.evaluate(() => tab("emprestar"));
   await page.locator("#loanForm [name=motorista]").fill("Motorista de Teste");
   await page.locator("#loanForm [name=motorista]").dispatchEvent("change");
+  assert.equal(
+    await page.locator("#loanForm [name=whatsapp]").inputValue(),
+    "(49) 99999-1234",
+  );
   assert.equal(
     await page.locator("#loanForm [name=transportadora]").inputValue(),
     "Transportes Floresta",
@@ -112,6 +131,8 @@ try {
   const other = await context2.newPage();
   await other.goto(base);
   await other.locator("#networkGate").waitFor({ state: "hidden" });
+  await other.evaluate(() => tab("emprestar"));
+  await other.locator("#loanForm [name=motorista]").fill("Rascunho preservado");
   assert.equal(await other.evaluate(() => db.loans[0].returned), 1);
   // Renaming retains historical text and does not recreate the old registry name.
   await page.evaluate(() => {
@@ -129,20 +150,30 @@ try {
     await page.evaluate(() => db.loans[0].motorista),
     "Motorista de Teste",
   );
-  // Stale device update must fail visibly, and must not overwrite the latest state.
+  // Polling propagates changes without discarding the other device's draft.
+  await other.waitForFunction(
+    () => db.registries.motoristas[0].name === "Motorista Renomeado",
+    {},
+    { timeout: 12000 },
+  );
+  assert.equal(
+    await other.locator("#loanForm [name=motorista]").inputValue(),
+    "Rascunho preservado",
+  );
+  // Force a stale revision and verify recovery without a manual refresh.
   other.on("dialog", (d) => d.accept());
   await other.evaluate(() => {
+    revision -= 1;
     tab("ajustes");
     document.querySelector("#settingsForm [name=unit]").value = "Conflito";
   });
   await other.locator("#settingsForm button").click();
   await other.waitForFunction(() => !isSaving);
-  assert.equal(await other.evaluate(() => needsRefresh), true);
   assert.notEqual(
     (await (await fetch(base + "/api/state")).json()).state.settings.unit,
     "Conflito",
   );
-  await other.evaluate(() => refreshShared());
+  await other.waitForFunction(() => !needsRefresh && !refreshing);
   assert.equal(
     await other.evaluate(() => db.registries.motoristas[0].name),
     "Motorista Renomeado",
@@ -164,13 +195,11 @@ try {
   );
   const backup = await page.evaluate(() => JSON.stringify(db));
   await page.evaluate(() => tab("backup"));
-  await page
-    .locator("#arquivo")
-    .setInputFiles({
-      name: "backup.json",
-      mimeType: "application/json",
-      buffer: Buffer.from(backup),
-    });
+  await page.locator("#arquivo").setInputFiles({
+    name: "backup.json",
+    mimeType: "application/json",
+    buffer: Buffer.from(backup),
+  });
   await settled();
   assert.equal(await page.evaluate(() => db.loans.length), 1);
   await page.evaluate(() => {
@@ -183,6 +212,11 @@ try {
   const exportEvent = page.waitForEvent("download");
   await page.getByRole("button", { name: "Exportar CSV", exact: true }).click();
   assert.ok((await exportEvent).suggestedFilename().endsWith(".csv"));
+  const popupEvent=page.waitForEvent('popup');
+  await page.getByRole('button',{name:'Imprimir / Salvar PDF',exact:true}).click();
+  const report=await popupEvent;await report.waitForLoadState();
+  assert.ok(await report.locator('link[href="/assets/report.css"]').count());
+  await report.close();
   // Network failure must not claim success or keep a changed local setting.
   await context.setOffline(true);
   await page.evaluate(() => tab("ajustes"));
@@ -195,7 +229,11 @@ try {
     "Offline não salva",
   );
   await context.setOffline(false);
-  await page.evaluate(() => refreshShared());
+  await page.waitForFunction(
+    () => !needsRefresh && !refreshing,
+    {},
+    { timeout: 12000 },
+  );
   await page.setViewportSize({ width: 390, height: 844 });
   for (const tabName of [
     "painel",
@@ -218,6 +256,7 @@ try {
   }
   assert.deepEqual(errors, []);
   await mkdir("test-results", { recursive: true });
+  await page.evaluate(()=>{$('toast').style.display='none'});
   await page.evaluate(() => tab("painel"));
   await page.screenshot({ path: "test-results/mobile.png", fullPage: true });
   await page.setViewportSize({ width: 1440, height: 1100 });
