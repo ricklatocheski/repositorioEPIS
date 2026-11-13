@@ -1,0 +1,24 @@
+{
+  "name": "controle-epis-guararapes",
+  "version": "2.0.0",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "dev": "node server/dev.mjs",
+    "start": "node server/dev.mjs",
+    "build": "node scripts/build.mjs",
+    "test": "node --test tests/api.test.mjs",
+    "test:browser": "node tests/browser.mjs",
+    "db:migrate": "node scripts/migrate.mjs"
+  },
+  "devDependencies": {
+    "playwright": "1.65.1"
+  },
+  "dependencies": {
+    "@netlify/database": "2.0.3",
+    "@electric-sql/pglite": "0.5.16"
+  }
+}

@@ -1,0 +1,544 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Controle de EPIs | Balança</title>
+    <link rel="stylesheet" href="/assets/styles.css" />
+  </head>
+  <body>
+    <aside class="sidebar">
+      <div class="brand" role="img" aria-label="Guararapes"></div>
+      <div class="side-label">GESTÃO OPERACIONAL</div>
+      <nav aria-label="Navegação principal">
+        <button data-tab="painel" onclick="tab('painel')">
+          <span aria-hidden="true">◫</span>Visão geral</button
+        ><button data-tab="emprestar" onclick="tab('emprestar')">
+          <span aria-hidden="true">＋</span>Novo empréstimo</button
+        ><button data-tab="registros" onclick="tab('registros')">
+          <span aria-hidden="true">⇄</span>Empréstimos</button
+        ><button data-tab="estoque" onclick="tab('estoque')">
+          <span aria-hidden="true">▤</span>Estoque de EPIs</button
+        ><button data-tab="cadastros" onclick="tab('cadastros')">
+          <span aria-hidden="true">♧</span>Cadastros</button
+        ><button data-tab="relatorios" onclick="tab('relatorios')">
+          <span aria-hidden="true">▥</span>Relatórios</button
+        ><button data-tab="backup" onclick="tab('backup')">
+          <span aria-hidden="true">↧</span>Backup e dados</button
+        ><button data-tab="ajustes" onclick="tab('ajustes')">
+          <span aria-hidden="true">⚙</span>Preferências
+        </button>
+      </nav>
+      <div class="sidebar-bottom">
+        <span class="connection-dot"></span> Banco compartilhado<br /><small
+          >Controle de EPIs · Balança</small
+        >
+      </div>
+    </aside>
+    <header class="topbar">
+      <span>Operações <span class="slash">/</span> Balança</span
+      ><span id="unitLabel">Controle de EPIs</span>
+    </header>
+    <main>
+      <div class="local-notice">
+        <span class="connection-dot"></span
+        ><span id="syncStatus" role="status"
+          >Conectando ao banco compartilhado…</span
+        ><button class="text-button" onclick="refreshShared()">
+          ↻ Atualizar dados
+        </button>
+      </div>
+      <section id="painel" class="active">
+        <div class="page-heading">
+          <div>
+            <span class="eyebrow">SEGURANÇA EM CADA ENTREGA</span>
+            <h1>Gestão de EPIs da balança.</h1>
+            <p>Acompanhe os EPIs da balança, da entrega à devolução.</p>
+          </div>
+          <button onclick="tab('emprestar')">＋ Novo empréstimo</button>
+        </div>
+        <div class="overview-banner">
+          <div>
+            <span class="eyebrow">OPERAÇÃO DA BALANÇA</span>
+            <h2>Da entrega à devolução,<br />cada EPI sob controle.</h2>
+            <p>Empréstimos, cadastros e estoque no mesmo lugar.</p>
+          </div>
+          <div class="banner-mark" aria-hidden="true">↗</div>
+        </div>
+        <div id="cards" class="cards"></div>
+        <div class="panel">
+          <h2>Pendências recentes</h2>
+          <div id="recentes" class="scroll"></div>
+        </div>
+        <div class="panel">
+          <div class="panel-heading">
+            <h2>Disponibilidade por EPI</h2>
+            <button class="text-button" onclick="tab('estoque')">
+              Gerenciar estoque ↗
+            </button>
+          </div>
+          <div id="stockOverview" class="stock-overview"></div>
+        </div>
+      </section>
+      <section id="emprestar">
+        <div class="panel">
+          <h2>Registrar novo empréstimo</h2>
+          <p class="muted">
+            Selecione um cadastro existente ou digite um novo. Os novos dados
+            serão cadastrados ao confirmar o empréstimo.
+          </p>
+          <datalist id="dlMotoristas"></datalist
+          ><datalist id="dlTransportadoras"></datalist
+          ><datalist id="dlVeiculos"></datalist>
+          <form id="loanForm" class="form">
+            <label
+              >Nome do motorista / entregador *<input
+                name="motorista"
+                list="dlMotoristas"
+                autocomplete="off"
+                placeholder="Selecione ou digite um novo motorista"
+                required
+                maxlength="100" /></label
+            ><label
+              >Transportadora *<input
+                name="transportadora"
+                list="dlTransportadoras"
+                autocomplete="off"
+                placeholder="Selecione ou digite uma transportadora"
+                required
+                maxlength="100" /></label
+            ><label
+              >Placa do veículo *<input
+                name="placa"
+                list="dlVeiculos"
+                autocomplete="off"
+                placeholder="ABC1D23"
+                pattern="[A-Za-z]{3}-?[0-9][A-Za-z0-9][0-9]{2}"
+                title="Informe uma placa brasileira válida: ABC1234 ou ABC1D23"
+                required
+                maxlength="8"
+                style="text-transform: uppercase"
+            /></label>
+            <div class="wide">
+              <label>EPIs do empréstimo *</label>
+              <div id="itensEmprestimo"></div>
+              <div class="actions">
+                <button
+                  type="button"
+                  class="secondary"
+                  onclick="adicionarItem()"
+                >
+                  + Adicionar outro EPI
+                </button>
+              </div>
+              <p class="muted">
+                Inclua quantos tipos de EPI precisar. Cada item terá seu próprio
+                saldo e devolução, mas todos estarão vinculados ao mesmo
+                atendimento.
+              </p>
+            </div>
+            <label
+              >Funcionário da balança *<input
+                name="responsavel"
+                required
+                maxlength="100" /></label
+            ><label
+              >Data e horário *<input
+                type="datetime-local"
+                name="quando"
+                required
+                id="quando" /></label
+            ><label class="wide"
+              >Observações<input name="obs" maxlength="400"
+            /></label>
+            <div class="actions">
+              <button type="submit">Confirmar empréstimo</button>
+            </div>
+          </form>
+        </div>
+      </section>
+      <section id="registros">
+        <div class="panel">
+          <h2>Empréstimos e devoluções</h2>
+          <div class="form">
+            <label
+              >Pesquisar<input
+                id="busca"
+                placeholder="Motorista, placa, transportadora, EPI"
+                oninput="render()" /></label
+            ><label
+              >Situação<select id="filtro" onchange="render()">
+                <option value="">Todas</option>
+                <option value="Pendente">Pendente</option>
+                <option value="Devolvido">Devolvido</option>
+                <option value="Encerrado com baixa">Encerrado com baixa</option>
+              </select></label
+            >
+          </div>
+          <div id="tabela" class="scroll" style="margin-top: 16px"></div>
+        </div>
+      </section>
+      <section id="estoque">
+        <div class="panel">
+          <h2>Cadastro e movimentação de estoque</h2>
+          <form id="stockForm" class="form">
+            <label
+              >Nome do EPI *<input
+                name="nome"
+                required
+                maxlength="90"
+                placeholder="Ex.: Colete refletivo" /></label
+            ><label
+              >Quantidade de ajuste *<input
+                name="qtd"
+                type="number"
+                min="0"
+                step="1"
+                required
+                value="0" /></label
+            ><label
+              >Tipo de movimentação<select name="tipo">
+                <option value="inicial">Definir estoque inicial</option>
+                <option value="entrada">Adicionar entrada</option>
+                <option value="baixa">Baixa avulsa / descarte</option>
+                <option value="minimo">Definir estoque mínimo</option>
+              </select></label
+            >
+            <div class="actions">
+              <button type="submit">Salvar estoque</button>
+            </div>
+          </form>
+          <p class="muted">
+            Para cadastrar um novo EPI, digite o nome e defina o estoque
+            inicial. Para atualizar, use exatamente o mesmo nome. Perdas
+            registradas nas devoluções já são descontadas automaticamente.
+          </p>
+          <div id="estoqueTabela" class="scroll"></div>
+          <details style="margin-top: 18px">
+            <summary style="cursor: pointer; font-weight: 650">
+              EPIs excluídos / arquivados (reativar)
+            </summary>
+            <div id="estoqueArquivados" class="scroll"></div>
+          </details>
+          <p class="muted">
+            Use “Editar” para corrigir nome e estoque mínimo. Use “Excluir” para
+            retirar um EPI da lista ativa. Se houver histórico, o cadastro será
+            arquivado e poderá ser reativado, preservando empréstimos e
+            relatórios. Faça backup antes de excluir.
+          </p>
+        </div>
+      </section>
+      <section id="relatorios">
+        <div class="panel">
+          <h2>Relatórios de empréstimos</h2>
+          <p class="muted">
+            Consulte os empréstimos por período e filtre por motorista,
+            transportadora, placa e EPI. As datas consideram o registro do
+            empréstimo.
+          </p>
+          <div class="form">
+            <label
+              >Data inicial<input
+                type="date"
+                id="relInicio"
+                value="2026-11-01"
+                onchange="renderReport()" /></label
+            ><label
+              >Data final<input
+                type="date"
+                id="relFim"
+                value="2026-11-30"
+                onchange="renderReport()" /></label
+            ><label
+              >Motorista<input
+                id="relMotorista"
+                placeholder="Todos os motoristas"
+                oninput="renderReport()" /></label
+            ><label
+              >Transportadora<input
+                id="relTransportadora"
+                placeholder="Todas as transportadoras"
+                oninput="renderReport()" /></label
+            ><label
+              >Placa<input
+                id="relPlaca"
+                placeholder="Todas as placas"
+                oninput="renderReport()" /></label
+            ><label
+              >EPI<select id="relEpi" onchange="renderReport()">
+                <option value="">Todos os EPIs</option>
+              </select></label
+            >
+          </div>
+          <div class="actions">
+            <button onclick="printReport()">Imprimir / Salvar PDF</button
+            ><button onclick="excelReport()">Exportar Excel (.xls)</button
+            ><button class="secondary" onclick="csvReport()">
+              Exportar CSV</button
+            ><button class="secondary" onclick="clearReport()">
+              Limpar filtros
+            </button>
+          </div>
+          <p class="muted">
+            Para gerar PDF, clique em “Imprimir / Salvar PDF” e selecione
+            “Salvar como PDF” na janela de impressão do navegador. O Excel
+            exportado é compatível com o formato XML Spreadsheet 2003 (.xls).
+          </p>
+          <div id="relResumo" class="cards" style="margin-top: 18px"></div>
+          <div id="relAviso" class="muted"></div>
+          <div id="relTabela" class="scroll" style="margin-top: 12px"></div>
+        </div>
+      </section>
+      <section id="backup">
+        <div class="panel">
+          <h2>Backup e segurança</h2>
+          <p>
+            Exporte o histórico em CSV para abrir no Excel ou salve um backup
+            JSON para restaurar este sistema.
+          </p>
+          <div class="actions">
+            <button onclick="csv()">Exportar histórico CSV</button
+            ><button onclick="backup()">Baixar backup JSON</button
+            ><label style="display: inline-block"
+              >Importar backup JSON<input
+                type="file"
+                accept="application/json,.json"
+                id="arquivo"
+            /></label>
+          </div>
+          <p class="muted">
+            A importação substitui os dados atuais, após confirmação. O CSV é um
+            relatório, não um backup restaurável.
+          </p>
+        </div>
+        <div class="panel">
+          <h3>Cuidados operacionais</h3>
+          <p>
+            Inspecione e higienize os EPIs antes de disponibilizá-los novamente,
+            quando o compartilhamento for permitido. Controle acesso aos dados
+            pessoais e mantenha cópias de segurança em local autorizado pela
+            empresa.
+          </p>
+        </div>
+      </section>
+      <section id="cadastros">
+        <div class="page-title">
+          <span class="eyebrow">BASE DA OPERAÇÃO</span>
+          <h2>Cadastros</h2>
+          <p class="muted">
+            Informações reutilizáveis para agilizar cada empréstimo.
+          </p>
+        </div>
+        <div class="panel">
+          <div class="registry-tabs" role="group" aria-label="Tipo de cadastro">
+            <button
+              class="secondary"
+              data-registry="transportadoras"
+              onclick="registryTab('transportadoras')"
+            >
+              Transportadoras</button
+            ><button
+              class="secondary"
+              data-registry="motoristas"
+              onclick="registryTab('motoristas')"
+            >
+              Motoristas</button
+            ><button
+              class="secondary"
+              data-registry="veiculos"
+              onclick="registryTab('veiculos')"
+            >
+              Veículos
+            </button>
+          </div>
+          <div class="registry-tools">
+            <label
+              >Pesquisar cadastro<input
+                id="registrySearch"
+                placeholder="Digite para buscar"
+                oninput="renderRegistry()" /></label
+            ><label
+              ><input
+                type="checkbox"
+                id="showInactive"
+                onchange="renderRegistry()"
+              />Mostrar inativos</label
+            ><button onclick="openRegistry()">＋ Novo cadastro</button>
+          </div>
+          <div class="scroll" id="registryTable"></div>
+          <p class="hint">
+            Inative cadastros para impedir novos empréstimos e manter o
+            histórico. A exclusão está disponível somente para cadastros sem
+            vínculos.
+          </p>
+        </div>
+      </section>
+      <section id="ajustes">
+        <div class="panel">
+          <h2>Preferências da operação</h2>
+          <p class="muted">
+            Personalize a identificação da unidade e agilize o preenchimento.
+          </p>
+          <form id="settingsForm" class="form">
+            <label
+              >Unidade / setor<input
+                name="unit"
+                maxlength="80"
+                placeholder="Ex.: Unidade Caçador · Balança" /></label
+            ><label
+              >Funcionário da balança padrão<input
+                name="operator"
+                maxlength="100"
+                placeholder="Nome do responsável"
+            /></label>
+            <div class="actions"><button>Salvar preferências</button></div>
+          </form>
+        </div>
+        <div class="panel">
+          <h2>Armazenamento</h2>
+          <p>Banco compartilhado · sem login</p>
+          <p class="muted">
+            Os dados são gravados no banco PostgreSQL pela API. Todos os
+            computadores que abrem este site consultam a mesma base. O backup
+            JSON inclui cadastros, empréstimos, estoque e preferências.
+          </p>
+          <p class="hint">
+            O acesso é direto, sem conta e sem página de login. Quem tiver
+            acesso ao endereço poderá consultar e alterar os registros.
+          </p>
+          <button class="secondary" onclick="tab('backup')">
+            Acessar backups
+          </button>
+        </div>
+      </section>
+      <div
+        class="modal-overlay"
+        id="registryModal"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="registryTitle"
+      >
+        <div class="modal" style="max-width: 600px">
+          <h2 id="registryTitle">Novo cadastro</h2>
+          <form id="registryForm" class="form">
+            <label class="wide" id="registryNameLabel"
+              >Nome<input id="registryName" maxlength="100" required /></label
+            ><label class="wide" id="registryCarrierLabel"
+              >Transportadora vinculada<select
+                id="registryCarrier"
+              ></select></label
+            ><label class="wide"
+              >Observações<input id="registryNotes" maxlength="250"
+            /></label>
+            <div class="actions wide">
+              <button>Salvar cadastro</button
+              ><button
+                type="button"
+                class="secondary"
+                onclick="closeRegistry()"
+              >
+                Cancelar
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </main>
+    <div id="toast" role="status" aria-live="polite"></div>
+    <div
+      class="modal-overlay"
+      id="modalDevolucao"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="tituloDevolucao"
+    >
+      <div class="modal">
+        <h2 id="tituloDevolucao">Devolução por atendimento</h2>
+        <p id="resumoDevolucao" class="muted"></p>
+        <form id="formDevolucao">
+          <div id="listaDevolucao"></div>
+          <div class="form" style="margin-top: 15px">
+            <label
+              >Responsável pelo recebimento *<input
+                id="recebedor"
+                maxlength="100"
+                required /></label
+            ><label
+              >Data e horário *<input
+                id="dataDevolucao"
+                type="datetime-local"
+                required /></label
+            ><label class="wide"
+              >Observações<input id="obsDevolucao" maxlength="400"
+            /></label>
+          </div>
+          <p class="muted">
+            Preencha as quantidades devolvidas ou perdidas. Deixe zero nos itens
+            que continuam emprestados.
+          </p>
+          <div class="actions">
+            <button type="submit">Confirmar devolução dos itens</button
+            ><button
+              type="button"
+              class="secondary"
+              onclick="fecharDevolucao()"
+            >
+              Cancelar
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+    <div
+      class="modal-overlay"
+      id="modalEditar"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="tituloEditar"
+    >
+      <div class="modal" style="max-width: 550px">
+        <h2 id="tituloEditar">Editar EPI cadastrado</h2>
+        <form id="formEditar" class="form">
+          <label class="wide"
+            >Nome do EPI *<input id="editNome" maxlength="90" required /></label
+          ><label
+            >Estoque mínimo *<input
+              id="editMinimo"
+              type="number"
+              min="0"
+              step="1"
+              required
+          /></label>
+          <p class="wide muted">
+            O estoque inicial e as movimentações permanecem inalterados. Para
+            corrigir quantidades, utilize as movimentações de estoque.
+          </p>
+          <div class="actions wide">
+            <button type="submit">Salvar alterações</button
+            ><button type="button" class="secondary" onclick="fecharEditar()">
+              Cancelar
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+    <footer>
+      Controle de EPIs · Balança
+      <span
+        >Desenvolvido por Aguinaldo Fernando de Jesus — Analista Fiscal</span
+      >
+    </footer>
+    <script defer src="/assets/app.js"></script>
+    <div id="networkGate" role="alert">
+      <div>
+        <span class="eyebrow">CONTROLE DE EPIs</span>
+        <h2 id="gateTitle">Conectando ao banco compartilhado</h2>
+        <p id="gateMessage">Aguarde a leitura dos registros da operação.</p>
+        <button id="gateRetry" onclick="refreshShared()" hidden>
+          Tentar novamente
+        </button>
+      </div>
+    </div>
+    <div id="networkProgress" role="status" hidden>Salvando no banco…</div>
+  </body>
+</html>
