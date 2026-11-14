@@ -1,6 +1,6 @@
 # Verificação da entrega
 
-Validação realizada em 13/11/2026:
+Validação atualizada em 14/11/2026:
 
 - 12 testes automatizados da API aprovados, usando PostgreSQL em memória via PGlite, incluindo persistência e validação do WhatsApp.
 - Fluxo no Chrome aprovado: cadastros, vínculo de transportadora, estoque inicial, empréstimo, devolução parcial com perda, edição sem recriar cadastro antigo e persistência após recarregar.
@@ -9,6 +9,7 @@ Validação realizada em 13/11/2026:
 - Textos de conexão/revisão, identificação no canto superior direito, legenda do menu, bloco inferior da barra lateral, rodapé de autoria e banner promocional removidos conforme solicitado.
 - Restauração de backup e exportação CSV verificadas.
 - Todas as telas verificadas em largura móvel de 390 px, sem transbordamento horizontal da página.
+- Revisão visual 2.2 conferida nas oito telas em larguras de 390, 768, 1024 e 1440 px; busca, atalhos para pendências, fonte e formulário de empréstimo também verificados.
 - `npm run build` aprovado.
 - `netlify build --offline` aprovou build e empacotamento da Function `api.mjs`.
 - `npm audit --omit=dev --audit-level=high`: nenhuma vulnerabilidade encontrada.

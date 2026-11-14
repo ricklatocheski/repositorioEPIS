@@ -5,32 +5,158 @@
     <meta name="viewport" content="width=device-width,initial-scale=1" />
     <title>Controle de EPIs | Balança</title>
     <link rel="stylesheet" href="/assets/styles.css" />
+    <link rel="stylesheet" href="/assets/design.css" />
   </head>
   <body>
     <aside class="sidebar">
-      <div class="brand" role="img" aria-label="Guararapes"></div>
+      <div class="brand"><img src="/assets/marca.png" alt="Guararapes" /></div>
       <nav aria-label="Navegação principal">
         <button data-tab="painel" onclick="tab('painel')">
-          <span aria-hidden="true">◫</span>Visão geral</button
+          <svg
+            viewBox="0 0 24 24"
+            width="19"
+            height="19"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="1.6"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            aria-hidden="true"
+          >
+            <path
+              d="M3 3h7v7H3z M14 3h7v7h-7z M3 14h7v7H3z M14 14h7v7h-7z"
+            /></svg
+          >Visão geral</button
         ><button data-tab="emprestar" onclick="tab('emprestar')">
-          <span aria-hidden="true">＋</span>Novo empréstimo</button
+          <svg
+            viewBox="0 0 24 24"
+            width="19"
+            height="19"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="1.6"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            aria-hidden="true"
+          >
+            <path d="M12 5v14 M5 12h14" /></svg
+          >Novo empréstimo</button
         ><button data-tab="registros" onclick="tab('registros')">
-          <span aria-hidden="true">⇄</span>Empréstimos</button
+          <svg
+            viewBox="0 0 24 24"
+            width="19"
+            height="19"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="1.6"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            aria-hidden="true"
+          >
+            <path d="M4 7h15 M15 3l4 4-4 4 M20 17H5 M9 13l-4 4 4 4" /></svg
+          >Empréstimos</button
         ><button data-tab="estoque" onclick="tab('estoque')">
-          <span aria-hidden="true">▤</span>Estoque de EPIs</button
+          <svg
+            viewBox="0 0 24 24"
+            width="19"
+            height="19"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="1.6"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            aria-hidden="true"
+          >
+            <path d="M3 7l9-4 9 4-9 4z M3 7v10l9 4 9-4V7 M12 11v10" /></svg
+          >Estoque de EPIs</button
         ><button data-tab="cadastros" onclick="tab('cadastros')">
-          <span aria-hidden="true">♧</span>Cadastros</button
+          <svg
+            viewBox="0 0 24 24"
+            width="19"
+            height="19"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="1.6"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            aria-hidden="true"
+          >
+            <path
+              d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2 M16 3a4 4 0 0 1 0 8 M22 21v-2a4 4 0 0 0-3-3.87 M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8"
+            /></svg
+          >Cadastros</button
         ><button data-tab="relatorios" onclick="tab('relatorios')">
-          <span aria-hidden="true">▥</span>Relatórios</button
+          <svg
+            viewBox="0 0 24 24"
+            width="19"
+            height="19"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="1.6"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            aria-hidden="true"
+          >
+            <path d="M4 20V10 M10 20V4 M16 20v-7 M22 20H2" /></svg
+          >Relatórios</button
         ><button data-tab="backup" onclick="tab('backup')">
-          <span aria-hidden="true">↧</span>Backup e dados</button
+          <svg
+            viewBox="0 0 24 24"
+            width="19"
+            height="19"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="1.6"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            aria-hidden="true"
+          >
+            <path d="M12 3v12 M7 10l5 5 5-5 M4 16v5h16v-5" /></svg
+          >Backup e dados</button
         ><button data-tab="ajustes" onclick="tab('ajustes')">
-          <span aria-hidden="true">⚙</span>Preferências
+          <svg
+            viewBox="0 0 24 24"
+            width="19"
+            height="19"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="1.6"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            aria-hidden="true"
+          >
+            <path d="M4 6h16 M4 12h16 M4 18h16 M8 3v6 M16 9v6 M10 15v6" /></svg
+          >Preferências
         </button>
       </nav>
     </aside>
     <header class="topbar">
-      <span>Operações <span class="slash">/</span> Balança</span>
+      <div class="breadcrumb">
+        <span>Balança</span><span class="breadcrumb-separator">›</span
+        ><strong id="breadcrumbCurrent">Visão geral</strong>
+      </div>
+      <button
+        class="icon-button"
+        onclick="refreshShared()"
+        aria-label="Atualizar registros"
+        title="Atualizar registros"
+      >
+        <svg
+          viewBox="0 0 24 24"
+          width="19"
+          height="19"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="1.6"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          aria-hidden="true"
+        >
+          <path
+            d="M20 7v5h-5 M4 17v-5h5 M6 6a8 8 0 0 1 13 3 M18 18A8 8 0 0 1 5 15"
+          />
+        </svg>
+      </button>
     </header>
     <main>
       <div id="syncError" class="sync-error" role="alert" hidden>
@@ -42,117 +168,301 @@
       <section id="painel" class="active">
         <div class="page-heading">
           <div>
-            <span class="eyebrow">SEGURANÇA EM CADA ENTREGA</span>
-            <h1>Gestão de EPIs da balança.</h1>
-            <p>Acompanhe os EPIs da balança, da entrega à devolução.</p>
+            <span class="eyebrow">Controle de equipamentos</span>
+            <h1>Visão geral</h1>
           </div>
-          <button onclick="tab('emprestar')">＋ Novo empréstimo</button>
-        </div>
-        <div id="cards" class="cards"></div>
-        <div class="panel">
-          <h2>Pendências recentes</h2>
-          <div id="recentes" class="scroll"></div>
-        </div>
-        <div class="panel">
-          <div class="panel-heading">
-            <h2>Disponibilidade por EPI</h2>
-            <button class="text-button" onclick="tab('estoque')">
-              Gerenciar estoque ↗
+          <div class="heading-actions">
+            <button class="secondary" onclick="tab('relatorios')">
+              <svg
+                viewBox="0 0 24 24"
+                width="19"
+                height="19"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.6"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                aria-hidden="true"
+              >
+                <path d="M12 3v12 M7 10l5 5 5-5 M4 16v5h16v-5" /></svg
+              >Relatórios</button
+            ><button onclick="tab('emprestar')">
+              <svg
+                viewBox="0 0 24 24"
+                width="19"
+                height="19"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.6"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                aria-hidden="true"
+              >
+                <path d="M12 5v14 M5 12h14" /></svg
+              >Novo empréstimo
             </button>
           </div>
-          <div id="stockOverview" class="stock-overview"></div>
+        </div>
+        <div class="dashboard-toolbar">
+          <form
+            class="overview-search"
+            onsubmit="event.preventDefault();$('busca').value=$('overviewSearch').value;$('filtro').value='';tab('registros')"
+          >
+            <svg
+              viewBox="0 0 24 24"
+              width="19"
+              height="19"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.6"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              aria-hidden="true"
+            >
+              <path d="M21 21l-5-5 M10 17a7 7 0 1 0 0-14 7 7 0 0 0 0 14" /></svg
+            ><input
+              id="overviewSearch"
+              placeholder="Buscar motorista, placa ou transportadora"
+              aria-label="Buscar empréstimo"
+            /><button class="text-button" type="submit">Buscar</button>
+          </form>
+          <button class="quick-filter" onclick="showPending()">
+            <svg
+              viewBox="0 0 24 24"
+              width="19"
+              height="19"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.6"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              aria-hidden="true"
+            >
+              <path
+                d="M12 8v5l3 2 M12 22a10 10 0 1 0 0-20 10 10 0 0 0 0 20"
+              /></svg
+            >Empréstimos em aberto</button
+          ><button class="quick-filter" onclick="tab('estoque')">
+            <svg
+              viewBox="0 0 24 24"
+              width="19"
+              height="19"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.6"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              aria-hidden="true"
+            >
+              <path d="M3 7l9-4 9 4-9 4z M3 7v10l9 4 9-4V7 M12 11v10" /></svg
+            >Consultar estoque
+          </button>
+        </div>
+        <div class="overview-caption">
+          <span>Resumo da operação</span
+          ><span>Indicadores atualizados automaticamente</span>
+        </div>
+        <div id="cards" class="cards"></div>
+        <div class="analytics-grid">
+          <div class="panel availability-panel">
+            <div class="section-heading">
+              <div>
+                <h2>Disponibilidade dos equipamentos</h2>
+                <p>Saldo disponível por tipo de EPI</p>
+              </div>
+              <span class="soft-tag" id="stockTypesCount"></span>
+            </div>
+            <div id="stockOverview"></div>
+            <div class="panel-note">
+              Disponível = estoque total − baixas − unidades em circulação
+            </div>
+          </div>
+          <div class="panel circulation-panel">
+            <div class="section-heading">
+              <div>
+                <h2>Movimentações de EPIs</h2>
+                <p>Distribuição das unidades emprestadas</p>
+              </div>
+              <svg
+                viewBox="0 0 24 24"
+                width="19"
+                height="19"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.6"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                aria-hidden="true"
+              >
+                <path d="M4 7h15 M15 3l4 4-4 4 M20 17H5 M9 13l-4 4 4 4" />
+              </svg>
+            </div>
+            <div id="loanDistribution"></div>
+          </div>
+        </div>
+        <div class="panel recent-panel">
+          <div class="section-heading">
+            <div>
+              <h2>Empréstimos em aberto</h2>
+              <p>Atendimentos que aguardam a devolução dos equipamentos</p>
+            </div>
+            <button class="text-button" onclick="showPending()">
+              Ver todos
+              <svg
+                viewBox="0 0 24 24"
+                width="19"
+                height="19"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.6"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                aria-hidden="true"
+              >
+                <path d="M5 12h14 M14 7l5 5-5 5" />
+              </svg>
+            </button>
+          </div>
+          <div id="recentes" class="scroll"></div>
+          <div class="table-foot" id="recentCount"></div>
         </div>
       </section>
       <section id="emprestar">
-        <div class="panel">
-          <h2>Registrar novo empréstimo</h2>
-          <p class="muted">
-            Selecione um cadastro existente ou digite um novo. Os novos dados
-            serão cadastrados ao confirmar o empréstimo.
-          </p>
-          <datalist id="dlMotoristas"></datalist
-          ><datalist id="dlTransportadoras"></datalist
-          ><datalist id="dlVeiculos"></datalist>
-          <form id="loanForm" class="form">
-            <label
-              >Nome do motorista / entregador *<input
-                name="motorista"
-                list="dlMotoristas"
-                autocomplete="off"
-                placeholder="Selecione ou digite um novo motorista"
-                required
-                maxlength="100" /></label
-            ><label
-              >Transportadora *<input
-                name="transportadora"
-                list="dlTransportadoras"
-                autocomplete="off"
-                placeholder="Selecione ou digite uma transportadora"
-                required
-                maxlength="100" /></label
-            ><label
-              >Placa do veículo *<input
-                name="placa"
-                list="dlVeiculos"
-                autocomplete="off"
-                placeholder="ABC1D23"
-                pattern="[A-Za-z]{3}-?[0-9][A-Za-z0-9][0-9]{2}"
-                title="Informe uma placa brasileira válida: ABC1234 ou ABC1D23"
-                required
-                maxlength="8"
-                style="text-transform: uppercase"
-            /></label>
-            <label
-              >WhatsApp do motorista<input
-                name="whatsapp"
-                type="tel"
-                autocomplete="tel"
-                inputmode="tel"
-                maxlength="25"
-                placeholder="(49) 99999-9999"
-              /><small class="muted">Opcional · informe o DDD.</small></label
-            >
-            <div class="wide">
-              <label>EPIs do empréstimo *</label>
-              <div id="itensEmprestimo"></div>
-              <div class="actions">
-                <button
-                  type="button"
-                  class="secondary"
-                  onclick="adicionarItem()"
-                >
-                  + Adicionar outro EPI
-                </button>
+        <div class="page-heading">
+          <div>
+            <span class="eyebrow">Controle de equipamentos</span>
+            <h1>Novo empréstimo</h1>
+            <p>Registre a entrega e vincule os equipamentos ao motorista.</p>
+          </div>
+        </div>
+        <div class="loan-layout">
+          <aside class="loan-guide">
+            <img src="/assets/marca.png" alt="Guararapes" />
+            <div>
+              <svg
+                viewBox="0 0 24 24"
+                width="19"
+                height="19"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.6"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                aria-hidden="true"
+              >
+                <path d="M12 3l8 3v6c0 5-8 9-8 9s-8-4-8-9V6z M8 12l3 3 5-6" />
+              </svg>
+              <h2>Entrega segura.<br />Controle em cada etapa.</h2>
+              <ol>
+                <li><span>01</span>Identifique o motorista</li>
+                <li><span>02</span>Selecione os equipamentos</li>
+                <li><span>03</span>Confira e registre</li>
+              </ol>
+            </div>
+          </aside>
+          <div class="panel loan-panel">
+            <div class="form-section-title">
+              <span>01</span>
+              <h2>Dados do atendimento</h2>
+            </div>
+            <p class="muted">
+              Selecione um cadastro existente ou digite um novo. Os novos dados
+              serão cadastrados ao confirmar o empréstimo.
+            </p>
+            <datalist id="dlMotoristas"></datalist
+            ><datalist id="dlTransportadoras"></datalist
+            ><datalist id="dlVeiculos"></datalist>
+            <form id="loanForm" class="form">
+              <label
+                >Nome do motorista / entregador *<input
+                  name="motorista"
+                  list="dlMotoristas"
+                  autocomplete="off"
+                  placeholder="Selecione ou digite um novo motorista"
+                  required
+                  maxlength="100" /></label
+              ><label
+                >Transportadora *<input
+                  name="transportadora"
+                  list="dlTransportadoras"
+                  autocomplete="off"
+                  placeholder="Selecione ou digite uma transportadora"
+                  required
+                  maxlength="100" /></label
+              ><label
+                >Placa do veículo *<input
+                  name="placa"
+                  list="dlVeiculos"
+                  autocomplete="off"
+                  placeholder="ABC1D23"
+                  pattern="[A-Za-z]{3}-?[0-9][A-Za-z0-9][0-9]{2}"
+                  title="Informe uma placa brasileira válida: ABC1234 ou ABC1D23"
+                  required
+                  maxlength="8"
+                  style="text-transform: uppercase"
+              /></label>
+              <label
+                >WhatsApp do motorista<input
+                  name="whatsapp"
+                  type="tel"
+                  autocomplete="tel"
+                  inputmode="tel"
+                  maxlength="25"
+                  placeholder="(49) 99999-9999"
+                /><small class="muted">Opcional · informe o DDD.</small></label
+              >
+              <div class="wide">
+                <div class="form-section-title">
+                  <span>02</span>
+                  <h3>Equipamentos da entrega</h3>
+                </div>
+                <div id="itensEmprestimo"></div>
+                <div class="actions">
+                  <button
+                    type="button"
+                    class="secondary"
+                    onclick="adicionarItem()"
+                  >
+                    + Adicionar outro EPI
+                  </button>
+                </div>
+                <p class="muted">
+                  Inclua quantos tipos de EPI precisar. Cada item terá seu
+                  próprio saldo e devolução, mas todos estarão vinculados ao
+                  mesmo atendimento.
+                </p>
               </div>
-              <p class="muted">
-                Inclua quantos tipos de EPI precisar. Cada item terá seu próprio
-                saldo e devolução, mas todos estarão vinculados ao mesmo
-                atendimento.
-              </p>
-            </div>
-            <label
-              >Funcionário da balança *<input
-                name="responsavel"
-                required
-                maxlength="100" /></label
-            ><label
-              >Data e horário *<input
-                type="datetime-local"
-                name="quando"
-                required
-                id="quando" /></label
-            ><label class="wide"
-              >Observações<input name="obs" maxlength="400"
-            /></label>
-            <div class="actions">
-              <button type="submit">Confirmar empréstimo</button>
-            </div>
-          </form>
+              <label
+                >Funcionário da balança *<input
+                  name="responsavel"
+                  required
+                  maxlength="100" /></label
+              ><label
+                >Data e horário *<input
+                  type="datetime-local"
+                  name="quando"
+                  required
+                  id="quando" /></label
+              ><label class="wide"
+                >Observações<input name="obs" maxlength="400"
+              /></label>
+              <div class="actions">
+                <button type="submit">Confirmar empréstimo</button>
+              </div>
+            </form>
+          </div>
         </div>
       </section>
       <section id="registros">
+        <div class="page-heading">
+          <div>
+            <span class="eyebrow">Controle de equipamentos</span>
+            <h1>Empréstimos e devoluções</h1>
+            <p>Consulte os atendimentos e receba os equipamentos devolvidos.</p>
+          </div>
+        </div>
         <div class="panel">
-          <h2>Empréstimos e devoluções</h2>
+          <h2>Histórico e pendências</h2>
           <div class="form">
             <label
               >Pesquisar<input
@@ -172,6 +482,13 @@
         </div>
       </section>
       <section id="estoque">
+        <div class="page-heading">
+          <div>
+            <span class="eyebrow">Controle de equipamentos</span>
+            <h1>Estoque de EPIs</h1>
+            <p>Gerencie quantidades, movimentações e níveis de reposição.</p>
+          </div>
+        </div>
         <div class="panel">
           <h2>Cadastro e movimentação de estoque</h2>
           <form id="stockForm" class="form">
@@ -222,6 +539,13 @@
         </div>
       </section>
       <section id="relatorios">
+        <div class="page-heading">
+          <div>
+            <span class="eyebrow">Controle de equipamentos</span>
+            <h1>Relatórios</h1>
+            <p>Consulte o histórico e exporte os resultados da operação.</p>
+          </div>
+        </div>
         <div class="panel">
           <h2>Relatórios de empréstimos</h2>
           <p class="muted">
@@ -283,6 +607,13 @@
         </div>
       </section>
       <section id="backup">
+        <div class="page-heading">
+          <div>
+            <span class="eyebrow">Controle de equipamentos</span>
+            <h1>Backup e dados</h1>
+            <p>Guarde uma cópia dos registros ou restaure um backup.</p>
+          </div>
+        </div>
         <div class="panel">
           <h2>Backup e segurança</h2>
           <p>
@@ -315,12 +646,12 @@
         </div>
       </section>
       <section id="cadastros">
-        <div class="page-title">
-          <span class="eyebrow">BASE DA OPERAÇÃO</span>
-          <h2>Cadastros</h2>
-          <p class="muted">
-            Informações reutilizáveis para agilizar cada empréstimo.
-          </p>
+        <div class="page-heading">
+          <div>
+            <span class="eyebrow">Controle de equipamentos</span>
+            <h1>Cadastros</h1>
+            <p>Mantenha motoristas, transportadoras e veículos organizados.</p>
+          </div>
         </div>
         <div class="panel">
           <div class="registry-tabs" role="group" aria-label="Tipo de cadastro">
@@ -367,6 +698,13 @@
         </div>
       </section>
       <section id="ajustes">
+        <div class="page-heading">
+          <div>
+            <span class="eyebrow">Controle de equipamentos</span>
+            <h1>Preferências</h1>
+            <p>Personalize os dados da operação.</p>
+          </div>
+        </div>
         <div class="panel">
           <h2>Preferências da operação</h2>
           <p class="muted">

@@ -2,6 +2,12 @@
 
 Sistema sem página de login, com interface inspirada no catálogo Guararapes enviado pelo solicitante. Inclui cadastros reutilizáveis, empréstimos com múltiplos EPIs, devoluções parciais, perdas, estoque, relatórios e backup.
 
+### Layout 2.2
+
+Revisão visual baseada no painel de erros de lançamento indicado pelo solicitante: fonte Manrope hospedada no próprio projeto, ícones vetoriais, cartões de indicadores, blocos de disponibilidade e movimentação, pendências agrupadas por atendimento e formulário de empréstimo com lateral em textura de madeira. A navegação acompanha a tela atual e se adapta a desktop, tablet e celular. A busca e os atalhos do painel abrem os registros já filtrados.
+
+O gráfico distribui as unidades dos empréstimos entre em circulação, devolvidas e baixadas; representa movimentações, não equipamentos físicos únicos. Os indicadores operacionais e o estoque continuam baseados na mesma base compartilhada. Nenhuma migração de dados é necessária para essa revisão visual. A fonte Manrope acompanha sua licença OFL em `public/assets/Manrope-OFL.txt`.
+
 [Publicar no Netlify](https://app.netlify.com/start/deploy?repository=https://github.com/ricklatocheski/repositorioEPIS)
 
 ## Publicar

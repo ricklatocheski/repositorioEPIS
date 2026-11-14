@@ -948,56 +948,230 @@ function upsertRegistry(type, name, carrierId) {
 }
 ensureRegistry();
 // Keep names from older backups compatible, including nonstandard legacy plates.
+const lineIcons = {
+  grid: "M3 3h7v7H3z M14 3h7v7h-7z M3 14h7v7H3z M14 14h7v7h-7z",
+  plus: "M12 5v14 M5 12h14",
+  loans: "M4 7h15 M15 3l4 4-4 4 M20 17H5 M9 13l-4 4 4 4",
+  box: "M3 7l9-4 9 4-9 4z M3 7v10l9 4 9-4V7 M12 11v10",
+  users:
+    "M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2 M16 3a4 4 0 0 1 0 8 M22 21v-2a4 4 0 0 0-3-3.87 M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8",
+  chart: "M4 20V10 M10 20V4 M16 20v-7 M22 20H2",
+  download: "M12 3v12 M7 10l5 5 5-5 M4 16v5h16v-5",
+  settings: "M4 6h16 M4 12h16 M4 18h16 M8 3v6 M16 9v6 M10 15v6",
+  refresh: "M20 7v5h-5 M4 17v-5h5 M6 6a8 8 0 0 1 13 3 M18 18A8 8 0 0 1 5 15",
+  search: "M21 21l-5-5 M10 17a7 7 0 1 0 0-14 7 7 0 0 0 0 14",
+  arrow: "M5 12h14 M14 7l5 5-5 5",
+  shield: "M12 3l8 3v6c0 5-8 9-8 9s-8-4-8-9V6z M8 12l3 3 5-6",
+  clock: "M12 8v5l3 2 M12 22a10 10 0 1 0 0-20 10 10 0 0 0 0 20",
+  alert: "M12 3L2 21h20z M12 9v5 M12 17v1",
+};
+function uiIcon(name) {
+  return (
+    '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="' +
+    (lineIcons[name] || lineIcons.box) +
+    '"/></svg>'
+  );
+}
+function showPending() {
+  $("filtro").value = "Pendente";
+  $("busca").value = "";
+  tab("registros");
+}
+function renderDashboard() {
+  const stocks = db.stock.filter((s) => !s.arquivado),
+    pending = db.loans.filter((l) => status(l) === "Pendente");
+  const av = stocks.reduce((n, s) => n + available(s), 0),
+    out = db.loans.reduce((n, l) => n + l.quantidade - l.returned - l.lost, 0),
+    returned = db.loans.reduce((n, l) => n + l.returned, 0),
+    loss = db.loans.reduce((n, l) => n + l.lost, 0);
+  const groups = new Map();
+  for (const l of pending) {
+    const key = l.grupo || String(l.id);
+    if (!groups.has(key)) groups.set(key, []);
+    groups.get(key).push(l);
+  }
+  const stats = [
+    ["EPIs disponíveis", av, "Prontos para uma nova entrega", "box"],
+    [
+      "Unidades em circulação",
+      out,
+      "Equipamentos aguardando devolução",
+      "loans",
+    ],
+    [
+      "Atendimentos em aberto",
+      groups.size,
+      "Empréstimos com itens pendentes",
+      "clock",
+    ],
+    [
+      "Reposição necessária",
+      stocks.filter((s) => available(s) <= s.minimo).length,
+      "Tipos de EPI no estoque mínimo",
+      "alert",
+    ],
+  ];
+  $("cards").innerHTML = stats
+    .map(
+      ([label, value, desc, icon], i) =>
+        '<div class="card ' +
+        (i === 0 ? "primary-stat" : "") +
+        '"><div class="stat-label"><span>' +
+        label +
+        "</span>" +
+        uiIcon(icon) +
+        "</div><b>" +
+        String(value).padStart(2, "0") +
+        "</b><small>" +
+        desc +
+        "</small></div>",
+    )
+    .join("");
+  $("stockTypesCount").textContent = stocks.length + " tipos cadastrados";
+  $("stockOverview").innerHTML = stocks.length
+    ? stocks
+        .map((s) => {
+          const av = available(s),
+            total = s.inicial + s.entradas - s.baixas - lost(s.nome),
+            percentage =
+              total > 0 ? Math.max(0, Math.min(100, (av / total) * 100)) : 0;
+          return (
+            '<div class="availability-row"><div><strong>' +
+            safe(s.nome) +
+            "</strong><small>" +
+            (total === 0
+              ? "Contagem inicial pendente"
+              : av <= s.minimo
+                ? "Reposição necessária"
+                : outstanding(s.nome) + " em circulação") +
+            '</small></div><span class="stock-quantity">' +
+            av +
+            '<small>disponíveis</small></span><div class="stock-track ' +
+            (av <= s.minimo ? "low" : "") +
+            '"><i style="width:' +
+            percentage +
+            '%"></i></div></div>'
+          );
+        })
+        .join("")
+    : '<div class="empty-state"><strong>Nenhum equipamento cadastrado.</strong>Cadastre os EPIs para acompanhar a disponibilidade.</div>';
+  const total = out + returned + loss,
+    first = total ? (out / total) * 100 : 0,
+    second = total ? ((out + returned) / total) * 100 : 0;
+  $("loanDistribution").innerHTML =
+    '<div class="donut-wrap"><div class="donut" role="img" aria-label="' +
+    out +
+    " unidades em circulação, " +
+    returned +
+    " devolvidas e " +
+    loss +
+    ' baixadas" style="background:' +
+    (total
+      ? "conic-gradient(#7d8d68 0 " +
+        first +
+        "%,#c4cfb0 " +
+        first +
+        "% " +
+        second +
+        "%,#c3ae8c " +
+        second +
+        "% 100%)"
+      : "#edf0e7") +
+    '"><div><strong>' +
+    String(total).padStart(2, "0") +
+    '</strong><small>unidades emprestadas</small></div></div></div><div class="distribution-legend">' +
+    [
+      ["Em circulação", out, "circulating"],
+      ["Devolvidas", returned, "returned"],
+      ["Perdidas / danificadas", loss, "loss"],
+    ]
+      .map(
+        ([label, n, color]) =>
+          '<div><span><i class="' +
+          color +
+          '"></i>' +
+          label +
+          "</span><strong>" +
+          n +
+          "</strong></div>",
+      )
+      .join("") +
+    "</div>";
+  const recent = [...groups.values()].reverse().slice(0, 5);
+  $("recentes").innerHTML = recent.length
+    ? rows([
+        [
+          "Motorista / transportadora",
+          "Veículo",
+          "Entrega",
+          "Pendência",
+          "Ação",
+        ],
+        ...recent.map((items) => {
+          const l = items[0],
+            n = items.reduce(
+              (sum, x) => sum + x.quantidade - x.returned - x.lost,
+              0,
+            );
+          return [
+            '<div class="person-cell"><span class="avatar">' +
+              safe(
+                l.motorista
+                  .split(/\s+/)
+                  .map((x) => x[0])
+                  .slice(0, 2)
+                  .join(""),
+              ) +
+              "</span><div><strong>" +
+              safe(l.motorista) +
+              "</strong><small>" +
+              safe(l.transportadora) +
+              "</small></div></div>",
+            '<span class="plate-cell">' + safe(l.placa) + "</span>",
+            safe(fmt(l.quando)),
+            '<span class="tag">' + n + " un. em aberto</span>",
+            '<button class="secondary" onclick="abrirDevolucao(' +
+              l.id +
+              ')">Devolver itens</button>',
+          ];
+        }),
+      ])
+    : '<div class="empty-state">' +
+      uiIcon("shield") +
+      "<strong>Nenhuma devolução pendente.</strong>Os próximos empréstimos aparecerão aqui.</div>";
+  $("recentCount").textContent = recent.length
+    ? "Exibindo " +
+      recent.length +
+      " de " +
+      groups.size +
+      " atendimentos em aberto"
+    : "Todos os atendimentos estão em dia.";
+}
 const originalRender = render;
 render = function () {
   originalRender();
   renderRegistry();
   renderRegistryOptions();
-
-  $("stockOverview").innerHTML = db.stock
-    .filter((s) => !s.arquivado)
-    .map((s) => {
-      const av = available(s),
-        total = s.inicial + s.entradas - s.baixas - lost(s.nome);
-      const width =
-        total > 0 ? Math.max(0, Math.min(100, (av / total) * 100)) : 0;
-      return (
-        '<div class="stock-tile"><div><strong>' +
-        safe(s.nome) +
-        "</strong><span>" +
-        av +
-        ' <small>disponíveis</small></span></div><div class="stock-track ' +
-        (av <= s.minimo ? "low" : "") +
-        '"><i style="width:' +
-        width +
-        '%"></i></div><p class="muted small">' +
-        (total === 0
-          ? "Aguardando contagem inicial"
-          : av <= s.minimo
-            ? "Estoque no mínimo · revisar reposição"
-            : "Estoque disponível") +
-        "</p></div>"
-      );
-    })
-    .join("");
-  for (const id of ["recentes", "tabela"]) {
-    const el = $(id);
-    if (!el.querySelector("table"))
-      el.innerHTML =
-        '<div class="empty-state"><strong>' +
-        (id === "recentes"
-          ? "Tudo em dia por aqui."
-          : "Nenhum empréstimo encontrado.") +
-        "</strong>" +
-        (id === "recentes"
-          ? "As próximas pendências aparecerão aqui."
-          : "Registre um empréstimo ou ajuste os filtros.") +
-        "</div>";
-  }
+  if (!$("tabela").querySelector("table"))
+    $("tabela").innerHTML =
+      '<div class="empty-state"><strong>Nenhum empréstimo encontrado.</strong>Registre um empréstimo ou ajuste os filtros.</div>';
+  renderDashboard();
 };
+
 const originalTab = tab;
 tab = function (id) {
   originalTab(id);
+  $("breadcrumbCurrent").textContent =
+    {
+      painel: "Visão geral",
+      emprestar: "Novo empréstimo",
+      registros: "Empréstimos e devoluções",
+      estoque: "Estoque de EPIs",
+      cadastros: "Cadastros",
+      relatorios: "Relatórios",
+      backup: "Backup e dados",
+      ajustes: "Preferências",
+    }[id] || "Visão geral";
   document.querySelectorAll("[data-tab]").forEach((b) => {
     if (b.dataset.tab === id) b.setAttribute("aria-current", "page");
     else b.removeAttribute("aria-current");
@@ -1213,7 +1387,11 @@ $("registryForm").onsubmit = async (e) => {
     registryType === "motoristas"
       ? normalizeWhatsapp($("registryWhatsapp").value)
       : "";
-  if (registryType === "motoristas" && $("registryWhatsapp").value.trim() && !validWhatsapp(whatsapp))
+  if (
+    registryType === "motoristas" &&
+    $("registryWhatsapp").value.trim() &&
+    !validWhatsapp(whatsapp)
+  )
     return alert("Informe um WhatsApp válido com DDD ou código internacional.");
   const duplicate = db.registries[registryType].find(
     (r) => r.id !== registryEdit && normalize(r.name) === normalize(name),
