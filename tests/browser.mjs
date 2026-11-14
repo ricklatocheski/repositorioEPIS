@@ -141,7 +141,7 @@ try {
     .getByRole("button", { name: "Devolver itens", exact: true })
     .click();
   await page.locator(".ret-q").fill("1");
-  await page.locator(".ret-lost").fill("1");
+
   await page.locator("#recebedor").fill("Recebedor de Teste");
   await page.locator("#formDevolucao button[type=submit]").click();
   await settled();
@@ -151,6 +151,41 @@ try {
     ),
     8,
   );
+  assert.equal(await page.evaluate(() => outstanding("Capacete")), 2);
+  assert.equal(await page.evaluate(() => db.loans[0].lost), 0);
+  await page
+    .getByRole("button", { name: "Registrar perda", exact: true })
+    .click();
+  await page.locator("#lossReporter").fill("Porteiro de Teste");
+  await page
+    .locator("#lossReason")
+    .fill("O motorista informou que perdeu um capacete durante a descarga.");
+  await page
+    .getByRole("button", { name: "Confirmar registro de perda", exact: true })
+    .click();
+  await settled();
+  assert.equal(await page.evaluate(() => outstanding("Capacete")), 1);
+  assert.equal(
+    await page.evaluate(() =>
+      available(db.stock.find((s) => s.nome === "Capacete")),
+    ),
+    8,
+  );
+  assert.equal(await page.locator("#lossHistory tbody tr").count(), 1);
+  await page.getByRole("button", { name: "Ver relato", exact: true }).click();
+  assert.ok(
+    (await page.locator("#lossDetails").innerText()).includes(
+      "Porteiro de Teste",
+    ),
+  );
+  assert.ok(
+    (await page.locator("#lossDetails").innerText()).includes(
+      "perdeu um capacete",
+    ),
+  );
+  await page
+    .getByRole("button", { name: "Fechar relato", exact: true })
+    .click();
   // Changing only the available count must preserve open loans and past returns.
   await page.evaluate(() => {
     tab("estoque");
@@ -330,7 +365,7 @@ try {
   await page.setViewportSize({ width: 1440, height: 1100 });
   await page.screenshot({ path: "test-results/desktop.png", fullPage: true });
   console.log(
-    "PASS: interface + API + banco, dois dispositivos, conflito, perda de conexão, abertura automática, histórico, CSV e telas móveis.",
+    "PASS: interface + API + banco, dois dispositivos, conflito, perda de conexão, abertura automática, perda com relato, histórico, CSV e telas móveis.",
   );
   await context2.close();
 } finally {

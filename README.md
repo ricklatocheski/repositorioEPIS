@@ -2,7 +2,7 @@
 
 Sistema sem página de login, com interface inspirada no catálogo Guararapes enviado pelo solicitante. Inclui cadastros reutilizáveis, empréstimos com múltiplos EPIs, devoluções parciais, perdas, estoque e relatórios.
 
-### Layout e tela de entrada 2.4
+### Layout e tela de entrada 2.5
 
 Revisão visual baseada no painel de erros de lançamento indicado pelo solicitante: fonte Manrope hospedada no próprio projeto, ícones vetoriais, cartões de indicadores, blocos de disponibilidade e movimentação, pendências agrupadas por atendimento e formulário de empréstimo com lateral em textura de madeira, sem frases ou etapas nessa lateral. A navegação acompanha a tela atual e se adapta a desktop, tablet e celular. A busca e os atalhos do painel abrem os registros já filtrados.
 
@@ -52,7 +52,8 @@ Ao acessar ou recarregar o site, o formulário de novo empréstimo abre automati
 - Cadastros de transportadoras, motoristas e veículos, com pesquisa, edição, inativação e reativação. Exclusão disponível para registros sem vínculos.
 - Novos nomes e placas são cadastrados automaticamente ao confirmar um empréstimo. Selecionar motorista ou veículo pode preencher a transportadora vinculada.
 - Empréstimo com múltiplos EPIs, verificação de disponibilidade e vínculo por atendimento.
-- Devolução total ou parcial, registro de perdas/danos e identificação do funcionário responsável.
+- Devolução total ou parcial com identificação do funcionário responsável.
+- Registro separado de perda pela portaria: EPI e quantidade, responsável, data e relato obrigatório. A ocorrência recebe protocolo e fica vinculada ao empréstimo. Ela encerra apenas a quantidade perdida, sem aumentar o disponível. Os relatos podem ser consultados em Empréstimos e devoluções.
 - Estoque simplificado: EPI, quantidade disponível e ações. Informe a quantidade que está fisicamente disponível; o sistema ajusta o saldo sem apagar empréstimos ou devoluções.
 - Painel com disponibilidade e pendências, filtros e relatórios por período, exportação CSV, Excel XML `.xls` e impressão para PDF.
 - Atualização automática a cada cinco segundos, preservando os campos em preenchimento. Durante uma janela de edição aberta, alterações recebidas aguardam seu fechamento. Alertas aparecem somente em falhas; bloqueio de duplo envio e conflitos continuam ativos.
@@ -71,9 +72,17 @@ Esta versão recebe estados de até **3 MB**, com no máximo **15 mil linhas de 
 
 O sistema permanece **sem autenticação**, conforme solicitado. Qualquer pessoa com acesso ao endereço pode consultar e alterar os registros, inclusive por chamadas diretas à API. A verificação de origem ajuda a impedir requisições indevidas de outras páginas, mas não substitui autenticação. Não publique tokens, credenciais ou dados reais no repositório público.
 
+## Perdas e EPIs ainda com o motorista
+
+Enquanto não for devolvido nem tiver perda confirmada, o EPI continua pendente e indisponível. Use **Registrar perda** no empréstimo apenas quando a portaria confirmar a perda. Informe quem registrou, quando, a quantidade e o relato. O sistema exige ao menos dez caracteres no relato e não permite registrar quantidade superior à pendente. **Devolver itens** é utilizado somente para itens recebidos de volta.
+
+Exemplo: de 10 capacetes, 3 foram emprestados e restam 7 disponíveis. Se 1 desses 3 for perdido, continuam 7 disponíveis e 2 pendentes. Quando os 2 forem devolvidos, o disponível será 9; a unidade perdida não voltou.
+
+Os relatos ficam em **Empréstimos e devoluções → Relatos de perda ou dano** e aparecem no histórico exportado pelos relatórios. Registros antigos de perda/dano continuam visíveis. Novas perdas exigem relato e identificação; o histórico registrado não pode ser reescrito pela edição comum.
+
 ## Dados existentes
 
-A revisão 2.4 não altera a estrutura do banco nem apaga os registros existentes. A importação de bases antigas e a recuperação de dados são procedimentos técnicos; não há uma área de backup na interface. Renomear um cadastro continua preservando o texto histórico dos empréstimos anteriores.
+A revisão 2.5 não altera a estrutura do banco nem apaga os registros existentes. A importação de bases antigas e a recuperação de dados são procedimentos técnicos; não há uma área de backup na interface. Renomear um cadastro continua preservando o texto histórico dos empréstimos anteriores.
 
 ## Usar PostgreSQL externo (opcional)
 

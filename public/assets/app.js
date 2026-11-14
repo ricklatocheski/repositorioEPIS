@@ -120,7 +120,9 @@ function render() {
         status(l) === "Pendente"
           ? '<button onclick="abrirDevolucao(' +
             l.id +
-            ')">Devolver itens</button>'
+            ')">Devolver itens</button><button class="secondary loss-action" onclick="abrirPerda(' +
+            l.id +
+            ')">Registrar perda</button>'
           : "—",
       ]),
     ]);
@@ -272,6 +274,7 @@ function relLinhas() {
               r.lostq +
               " | responsável: " +
               r.who +
+              (r.occurrenceId ? " | ocorrência: " + r.occurrenceId : "") +
               (r.obs ? " | " + r.obs : ""),
           )
           .join(" / "),
@@ -572,9 +575,7 @@ function abrirDevolucao(id) {
         pend +
         '" step="1" value="' +
         pend +
-        '" required></label><label>Perdidos / danificados<input class="ret-lost" type="number" min="0" max="' +
-        pend +
-        '" step="1" value="0" required></label><div class="small">Restante: <strong class="ret-pend">0</strong></div></div>'
+        '" required></label><input class="ret-lost" type="hidden" value="0" style="display:none"><div class="small">Restante: <strong class="ret-pend">0</strong></div></div>'
       );
     })
     .join("");
@@ -623,6 +624,10 @@ $("formDevolucao").onsubmit = async (e) => {
     )
       return alert(
         "Quantidade inválida para " + l.epi + ". Máximo em aberto: " + pend,
+      );
+    if (lostq)
+      return alert(
+        "Para registrar perda, use a opção Registrar perda no empréstimo.",
       );
     if (q + lostq) mudancas.push({ l, q, lostq });
   }
@@ -1051,7 +1056,9 @@ function renderDashboard() {
             '<span class="tag">' + n + " un. em aberto</span>",
             '<button class="secondary" onclick="abrirDevolucao(' +
               l.id +
-              ')">Devolver itens</button>',
+              ')">Devolver itens</button><button class="secondary loss-action" onclick="abrirPerda(' +
+              l.id +
+              ')">Registrar perda</button>',
           ];
         }),
       ])
@@ -1075,6 +1082,7 @@ render = function () {
     $("tabela").innerHTML =
       '<div class="empty-state"><strong>Nenhum empréstimo encontrado.</strong>Registre um empréstimo ou ajuste os filtros.</div>';
   renderDashboard();
+  renderLossHistory();
 };
 
 const originalTab = tab;
@@ -1557,6 +1565,8 @@ document.addEventListener("keydown", (e) => {
   if (!modal) return;
   if (e.key === "Escape") {
     if (modal.id === "loanWizard") closeLoanWizard();
+    else if (modal.id === "modalPerda") fecharPerda();
+    else if (modal.id === "modalRelatoPerda") fecharRelatoPerda();
     else if (modal.id === "registryModal") closeRegistry();
     else if (modal.id === "modalEditar") fecharEditar();
     else fecharDevolucao();
@@ -1825,6 +1835,206 @@ function maskWhatsAppInput(input) {
 }
 for (const input of [$("registryWhatsapp"), $("loanForm").elements.whatsapp])
   input.addEventListener("input", () => maskWhatsAppInput(input));
+
+let lossDraftId = null,
+  lossOrigin = null,
+  lossDetailsOrigin = null;
+function abrirPerda(id) {
+  const loan = db.loans.find((l) => l.id === id);
+  if (!loan) return;
+  const items = db.loans.filter(
+    (l) =>
+      (loan.grupo ? l.grupo === loan.grupo : l.id === id) &&
+      status(l) === "Pendente",
+  );
+  if (!items.length) return alert("Este atendimento não tem itens pendentes.");
+  lossOrigin = document.activeElement;
+  $("lossForm").reset();
+  $("lossDate").value = localNow();
+  lossDraftId = "PERDA-" + Date.now() + "-" + crypto.randomUUID().slice(0, 8);
+  $("lossLoanSummary").textContent =
+    loan.motorista +
+    " · " +
+    loan.transportadora +
+    " · " +
+    loan.placa +
+    " · Atendimento " +
+    (loan.grupo || loan.id);
+  $("lossItems").innerHTML = items
+    .map((l) => {
+      const pending = l.quantidade - l.returned - l.lost;
+      return (
+        '<div class="loss-item" data-loan="' +
+        l.id +
+        '"><div><strong>' +
+        safe(l.epi) +
+        "</strong><small>" +
+        pending +
+        ' unidade(s) ainda não devolvida(s)</small></div><label>Quantidade perdida<input class="loss-quantity" type="number" min="0" max="' +
+        pending +
+        '" step="1" value="' +
+        (l.id === id ? 1 : 0) +
+        '" required></label></div>'
+      );
+    })
+    .join("");
+  $("modalPerda").classList.add("open");
+  $("lossReporter").focus();
+}
+function fecharPerda() {
+  if (!isSaving) {
+    $("modalPerda").classList.remove("open");
+    lossDraftId = null;
+    setTimeout(() => {
+      if (lossOrigin?.isConnected) lossOrigin.focus();
+      else document.querySelector('[data-tab="registros"]').focus();
+    }, 0);
+  }
+}
+$("lossForm").onsubmit = async (e) => {
+  e.preventDefault();
+  const who = $("lossReporter").value.trim(),
+    date = $("lossDate").value,
+    obs = $("lossReason").value.trim();
+  if (!lossDraftId) return alert("Abra novamente o registro de perda.");
+  if (
+    db.loans.some((loan) =>
+      loan.returns.some((event) => event.occurrenceId === lossDraftId),
+    )
+  ) {
+    fecharPerda();
+    toast("Esta perda já foi registrada. Confira o relato no histórico.");
+    return;
+  }
+  if (!who || !date || obs.length < 10)
+    return alert(
+      "Informe o responsável da portaria, a data e um relato com pelo menos 10 caracteres.",
+    );
+  const changes = [];
+  for (const row of $("lossItems").querySelectorAll(".loss-item")) {
+    const loan = db.loans.find((l) => l.id === Number(row.dataset.loan)),
+      quantity = Number(row.querySelector(".loss-quantity").value);
+    if (
+      !loan ||
+      !Number.isInteger(quantity) ||
+      quantity < 0 ||
+      quantity > loan.quantidade - loan.returned - loan.lost
+    )
+      return alert(
+        "Confira a quantidade perdida. Ela não pode ultrapassar o que está pendente.",
+      );
+    if (quantity) changes.push({ loan, quantity });
+  }
+  if (!changes.length) return alert("Informe ao menos uma unidade perdida.");
+  const before = JSON.stringify(db),
+    occurrenceId = lossDraftId;
+  for (const { loan, quantity } of changes) {
+    loan.lost += quantity;
+    loan.returns.push({
+      quando: new Date(date).toISOString(),
+      q: 0,
+      lostq: quantity,
+      who,
+      obs,
+      tipo: "perda",
+      occurrenceId,
+    });
+  }
+  if (!(await save())) {
+    db = JSON.parse(before);
+    render();
+    return;
+  }
+  fecharPerda();
+  toast("Perda registrada. O estoque disponível não foi aumentado.");
+};
+function lossRecords() {
+  const records = new Map();
+  for (const loan of db.loans)
+    for (const [index, event] of (loan.returns || []).entries()) {
+      if (!event.lostq) continue;
+      const id = event.occurrenceId || "ANTERIOR-" + loan.id + "-" + index;
+      if (!records.has(id))
+        records.set(id, {
+          id,
+          legacy: !event.occurrenceId,
+          event,
+          loan,
+          items: [],
+        });
+      records.get(id).items.push({ epi: loan.epi, quantity: event.lostq });
+    }
+  return [...records.values()].sort((a, b) =>
+    String(b.event.quando).localeCompare(String(a.event.quando)),
+  );
+}
+function renderLossHistory() {
+  const records = lossRecords();
+  $("lossHistoryCount").textContent = records.length + " registro(s)";
+  $("lossHistory").innerHTML = records.length
+    ? rows([
+        [
+          "Data",
+          "Motorista / veículo",
+          "EPI / quantidade",
+          "Responsável",
+          "Relato",
+        ],
+        ...records.map((r) => [
+          safe(fmt(r.event.quando)),
+          "<strong>" +
+            safe(r.loan.motorista) +
+            '</strong><small class="loss-cell-note">' +
+            safe(r.loan.placa) +
+            "</small>",
+          r.items
+            .map((i) => safe(i.epi) + " · " + i.quantity + " un.")
+            .join("<br>"),
+          safe(r.event.who),
+          '<button class="secondary" onclick="abrirRelatoPerda(\'' +
+            r.id +
+            "')\">Ver relato</button>",
+        ]),
+      ])
+    : '<div class="empty-state"><strong>Nenhuma perda registrada.</strong>Use “Registrar perda” somente quando a perda do EPI for confirmada.</div>';
+}
+function abrirRelatoPerda(id) {
+  const record = lossRecords().find((r) => r.id === id);
+  if (!record) return;
+  const { loan, event } = record;
+  lossDetailsOrigin = document.activeElement;
+  $("lossDetails").innerHTML =
+    '<p class="loss-reference">' +
+    safe(
+      record.legacy ? "Registro anterior sem protocolo de perda" : record.id,
+    ) +
+    '</p><dl class="loss-detail-grid"><div><dt>Motorista</dt><dd>' +
+    safe(loan.motorista) +
+    "</dd></div><div><dt>Transportadora / placa</dt><dd>" +
+    safe(loan.transportadora) +
+    " · " +
+    safe(loan.placa) +
+    "</dd></div><div><dt>Responsável da portaria</dt><dd>" +
+    safe(event.who) +
+    "</dd></div><div><dt>Data e horário</dt><dd>" +
+    safe(fmt(event.quando)) +
+    '</dd></div><div class="wide"><dt>Equipamentos perdidos / danificados</dt><dd>' +
+    record.items
+      .map((i) => safe(i.epi) + " · " + i.quantity + " unidade(s)")
+      .join("<br>") +
+    '</dd></div></dl><h3>Relato registrado</h3><p class="loss-narrative">' +
+    safe(event.obs || "O registro anterior não contém relato.") +
+    "</p>";
+  $("modalRelatoPerda").classList.add("open");
+  document.querySelector("#modalRelatoPerda button").focus();
+}
+function fecharRelatoPerda() {
+  $("modalRelatoPerda").classList.remove("open");
+  setTimeout(() => {
+    if (lossDetailsOrigin?.isConnected) lossDetailsOrigin.focus();
+    else document.querySelector('[data-tab="registros"]').focus();
+  }, 0);
+}
 
 let loanOrigin = null;
 function openLoanWizard() {

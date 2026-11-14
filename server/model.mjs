@@ -70,6 +70,7 @@ export function validateState(state) {
     balances.set(s.nome, s.inicial + s.entradas - s.baixas);
   }
   const loanIds = new Set();
+  const lossReports = new Map();
   for (const l of state.loans) {
     check(
       object(l) && integer(l.id) && l.id > 0 && !loanIds.has(l.id),
@@ -105,6 +106,7 @@ export function validateState(state) {
     );
     let returned = 0,
       lost = 0;
+    const loanLossReports = new Set();
     for (const r of l.returns) {
       check(
         object(r) &&
@@ -116,6 +118,33 @@ export function validateState(state) {
           (r.obs === undefined || text(r.obs, 400, false)),
         "Devolução inválida.",
       );
+      if (r.occurrenceId !== undefined || r.tipo !== undefined) {
+        check(
+          r.tipo === "perda" &&
+            identifier(r.occurrenceId) &&
+            r.lostq > 0 &&
+            text(r.obs, 400) &&
+            r.obs.trim().length >= 10,
+          "Registre a perda com identificação, responsável, data e relato de pelo menos 10 caracteres.",
+        );
+        const signature = JSON.stringify([
+          l.grupo || l.id,
+          r.who,
+          r.quando,
+          r.obs,
+        ]);
+        check(
+          !lossReports.has(r.occurrenceId) ||
+            lossReports.get(r.occurrenceId) === signature,
+          "O protocolo de perda está associado a outra ocorrência.",
+        );
+        lossReports.set(r.occurrenceId, signature);
+        check(
+          !loanLossReports.has(r.occurrenceId),
+          "A perda deste EPI já consta na mesma ocorrência.",
+        );
+        loanLossReports.add(r.occurrenceId);
+      }
       returned += r.q;
       lost += r.lostq;
     }
@@ -195,6 +224,11 @@ export function validateState(state) {
 export function validateTransition(previous, next, operation) {
   // An explicit backup restore is allowed to replace historical records.
   if (operation === "restore") return;
+  const previousLossReports = new Set(
+    previous.loans.flatMap((loan) =>
+      loan.returns.map((event) => event.occurrenceId).filter(Boolean),
+    ),
+  );
   const nextLoans = new Map(next.loans.map((l) => [l.id, l]));
   for (const old of previous.loans) {
     const l = nextLoans.get(old.id);
@@ -203,6 +237,34 @@ export function validateTransition(previous, next, operation) {
       l.returned >= old.returned && l.lost >= old.lost,
       "Devoluções já registradas não podem ser removidas.",
     );
+    check(
+      l.returns.length >= old.returns.length,
+      "O histórico das devoluções e perdas não pode ser removido.",
+    );
+    for (let i = 0; i < old.returns.length; i++) {
+      const previous = old.returns[i],
+        current = l.returns[i];
+      check(
+        ["q", "lostq", "who", "quando", "obs", "occurrenceId", "tipo"].every(
+          (key) => (previous[key] ?? "") === (current[key] ?? ""),
+        ),
+        "O histórico das devoluções e perdas já registradas não pode ser alterado.",
+      );
+    }
+    for (const event of l.returns.slice(old.returns.length))
+      if (event.lostq > 0) {
+        check(
+          event.tipo === "perda" &&
+            identifier(event.occurrenceId) &&
+            typeof event.obs === "string" &&
+            event.obs.trim().length >= 10,
+          "Para confirmar uma perda, registre o relato da portaria.",
+        );
+        check(
+          !previousLossReports.has(event.occurrenceId),
+          "Esta ocorrência de perda já foi registrada.",
+        );
+      }
   }
   const previousIds = new Set(previous.loans.map((l) => l.id));
   for (const l of next.loans.filter((l) => !previousIds.has(l.id))) {

@@ -327,6 +327,18 @@
           </div>
           <div id="tabela" class="scroll" style="margin-top: 16px"></div>
         </div>
+        <div class="panel loss-history-panel">
+          <div class="panel-heading">
+            <div>
+              <h2>Relatos de perda ou dano</h2>
+              <p class="muted">
+                Registros da portaria vinculados aos empréstimos
+              </p>
+            </div>
+            <span class="soft-tag" id="lossHistoryCount"></span>
+          </div>
+          <div class="scroll" id="lossHistory"></div>
+        </div>
       </section>
       <section id="estoque">
         <div class="page-heading">
@@ -572,8 +584,9 @@
             /></label>
           </div>
           <p class="muted">
-            Preencha as quantidades devolvidas ou perdidas. Deixe zero nos itens
-            que continuam emprestados.
+            Informe as quantidades devolvidas. Os demais itens continuam
+            pendentes. Para perdas confirmadas, use Registrar perda no
+            empréstimo.
           </p>
           <div class="actions">
             <button type="submit">Confirmar devolução dos itens</button
@@ -746,6 +759,71 @@
               </div>
             </form>
           </div>
+        </div>
+      </div>
+    </div>
+    <div
+      class="modal-overlay"
+      id="modalPerda"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="lossTitle"
+    >
+      <div class="modal loss-modal">
+        <h2 id="lossTitle">Registrar perda de EPI</h2>
+        <p id="lossLoanSummary" class="muted"></p>
+        <form id="lossForm">
+          <div id="lossItems"></div>
+          <div class="form">
+            <label
+              >Responsável da portaria *<input
+                id="lossReporter"
+                maxlength="100"
+                required /></label
+            ><label
+              >Data e horário da ocorrência *<input
+                id="lossDate"
+                type="datetime-local"
+                required /></label
+            ><label class="wide"
+              >Relato da perda *<textarea
+                id="lossReason"
+                rows="4"
+                minlength="10"
+                maxlength="400"
+                placeholder="Descreva o que aconteceu com o EPI e o que foi informado pelo motorista."
+                required
+              ></textarea>
+            </label>
+          </div>
+          <p class="loss-note">
+            Registre apenas perdas confirmadas. O EPI perdido não volta ao
+            estoque disponível. Se o motorista ainda estiver com o equipamento,
+            mantenha o empréstimo pendente.
+          </p>
+          <div class="actions">
+            <button type="submit">Confirmar registro de perda</button
+            ><button type="button" class="secondary" onclick="fecharPerda()">
+              Cancelar
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+    <div
+      class="modal-overlay"
+      id="modalRelatoPerda"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="lossDetailsTitle"
+    >
+      <div class="modal loss-modal">
+        <h2 id="lossDetailsTitle">Relato de perda</h2>
+        <div id="lossDetails"></div>
+        <div class="actions">
+          <button type="button" class="secondary" onclick="fecharRelatoPerda()">
+            Fechar relato
+          </button>
         </div>
       </div>
     </div>

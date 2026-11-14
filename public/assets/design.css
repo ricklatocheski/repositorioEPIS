@@ -1387,3 +1387,126 @@ body.loan-open {
 #estoqueTabela td:nth-child(2) {
   width: 25%;
 }
+
+.loss-action {
+  margin-left: 7px;
+  color: #9b6e49 !important;
+}
+.loss-item {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 180px;
+  gap: 18px;
+  align-items: center;
+  border: 1px solid #e8ecdf;
+  background: #f8f9f4;
+  border-radius: 8px;
+  padding: 16px;
+  margin-bottom: 16px;
+}
+.loss-item strong {
+  font-size: 13px;
+}
+.loss-item small {
+  display: block;
+  font-size: 11px;
+  color: #8a957b;
+  margin-top: 5px;
+}
+.loss-modal {
+  max-width: 760px;
+}
+.loss-modal .form {
+  margin-top: 21px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+.loss-modal textarea {
+  font: inherit;
+  display: block;
+  width: 100%;
+  margin-top: 8px;
+  border: 1px solid #e1e6d7;
+  border-radius: 6px;
+  padding: 12px;
+  resize: vertical;
+  font-size: 12px;
+  color: #535e47;
+}
+.loss-note {
+  font-size: 11px;
+  line-height: 1.9;
+  color: #8b744d;
+  padding: 13px 16px;
+  background: #fcf7eb;
+  border: 1px solid #efe4c8;
+  border-radius: 7px;
+  margin: 18px 0 0;
+}
+.loss-history-panel .panel-heading {
+  margin-bottom: 5px;
+}
+.loss-history-panel .muted {
+  margin: 6px 0 0;
+}
+.loss-reference {
+  font-size: 10px;
+  color: #859175;
+  overflow-wrap: anywhere;
+  margin: 12px 0 20px;
+}
+.loss-detail-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 18px 25px;
+  padding: 19px;
+  background: #f6f8f1;
+  border-radius: 9px;
+  margin: 0 0 23px;
+}
+.loss-detail-grid dt {
+  font-size: 10px;
+  color: #8b957b;
+  margin-bottom: 7px;
+}
+.loss-detail-grid dd {
+  font-size: 12px;
+  font-weight: 600;
+  margin: 0;
+  line-height: 1.8;
+  overflow-wrap: anywhere;
+}
+.loss-narrative {
+  font-size: 12px;
+  line-height: 1.9;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  color: #657453;
+}
+.loss-cell-note {
+  display: block;
+  font-size: 10px;
+  color: #95a088;
+  margin-top: 4px;
+}
+.return-item {
+  grid-template-columns: minmax(160px, 2fr) minmax(100px, 1fr) minmax(85px, 1fr);
+}
+@media (max-width: 650px) {
+  .loss-item {
+    grid-template-columns: 1fr 110px;
+    gap: 12px;
+    padding: 13px;
+  }
+  .loss-modal .form,
+  .loss-detail-grid {
+    grid-template-columns: 1fr;
+  }
+  .loss-action {
+    margin-left: 4px;
+  }
+  .return-item {
+    grid-template-columns: 1fr 1fr;
+  }
+  .return-item > div:first-child {
+    grid-column: 1/-1;
+  }
+}

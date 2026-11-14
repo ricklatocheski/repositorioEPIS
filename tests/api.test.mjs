@@ -99,7 +99,9 @@ test("grava empréstimo e devolução parcial com perda na mesma transação", a
     lostq: 1,
     who: "Recebedor",
     quando: "2026-11-13T11:00:00Z",
-    obs: "",
+    obs: "Motorista informou a perda de uma unidade.",
+    tipo: "perda",
+    occurrenceId: "PERDA-TESTE-1",
   });
   await commit(state);
   const stored = await repository.read();
@@ -262,4 +264,80 @@ test("WhatsApp opcional é persistido e valores inválidos são rejeitados", asy
   const invalid = structuredClone(state);
   invalid.registries.motoristas[0].whatsapp = "javascript:alert(1)";
   await assert.rejects(() => commit(invalid), /WhatsApp inválido/);
+});
+test("perda exige relato da portaria e não devolve unidades ao estoque", async () => {
+  const state = stockAndLoan();
+  await commit(state, { operation: "restore" });
+  const invalid = structuredClone(state);
+  invalid.loans[0].lost = 1;
+  invalid.loans[0].returns.push({
+    q: 0,
+    lostq: 1,
+    who: "Portaria de teste",
+    quando: "2026-11-14T10:00:00Z",
+    obs: "",
+  });
+  await assert.rejects(() => commit(invalid), /relato da portaria/);
+  const valid = structuredClone(invalid);
+  Object.assign(valid.loans[0].returns[0], {
+    tipo: "perda",
+    occurrenceId: "PERDA-TESTE-2",
+    obs: "Motorista informou que perdeu um colete durante a descarga.",
+  });
+  await commit(valid);
+  const saved = (await repository.read()).state;
+  const stock = saved.stock[0],
+    loan = saved.loans[0];
+  assert.equal(
+    stock.inicial +
+      stock.entradas -
+      stock.baixas -
+      loan.quantidade +
+      loan.returned,
+    7,
+  );
+  assert.equal(loan.quantidade - loan.returned - loan.lost, 2);
+  assert.equal(loan.returns[0].who, "Portaria de teste");
+  const changed = structuredClone(saved);
+  changed.loans[0].returns[0].obs =
+    "Relato histórico substituído indevidamente";
+  await assert.rejects(() => commit(changed), /não pode ser alterado/);
+});
+test("perda de todos os itens encerra a pendência, sem repor o estoque", async () => {
+  const state = stockAndLoan();
+  await commit(state, { operation: "restore" });
+  state.loans[0].lost = 3;
+  state.loans[0].returns.push({
+    q: 0,
+    lostq: 3,
+    who: "Portaria de teste",
+    quando: "2026-11-14T11:00:00Z",
+    obs: "O motorista confirmou a perda de todos os coletes emprestados.",
+    tipo: "perda",
+    occurrenceId: "PERDA-TESTE-3",
+  });
+  await commit(state);
+  const saved = (await repository.read()).state;
+  assert.equal(
+    saved.loans[0].quantidade - saved.loans[0].returned - saved.loans[0].lost,
+    0,
+  );
+  assert.equal(
+    saved.stock[0].inicial +
+      saved.stock[0].entradas -
+      saved.stock[0].baixas -
+      saved.loans[0].quantidade +
+      saved.loans[0].returned,
+    7,
+  );
+  const invalid = structuredClone(saved);
+  invalid.loans[0].returned = 1;
+  invalid.loans[0].returns.push({
+    q: 1,
+    lostq: 0,
+    who: "Recebedor",
+    quando: "2026-11-14T12:00:00Z",
+    obs: "",
+  });
+  await assert.rejects(() => commit(invalid), /inconsistentes/);
 });
