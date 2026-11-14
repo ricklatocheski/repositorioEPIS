@@ -2,9 +2,9 @@
 
 Sistema sem página de login, com interface inspirada no catálogo Guararapes enviado pelo solicitante. Inclui cadastros reutilizáveis, empréstimos com múltiplos EPIs, devoluções parciais, perdas, estoque e relatórios.
 
-### Layout e tela de entrada 2.5
+### Layout e tela de entrada 2.6
 
-Revisão visual baseada no painel de erros de lançamento indicado pelo solicitante: fonte Manrope hospedada no próprio projeto, ícones vetoriais, cartões de indicadores, blocos de disponibilidade e movimentação, pendências agrupadas por atendimento e formulário de empréstimo com lateral em textura de madeira, sem frases ou etapas nessa lateral. A navegação acompanha a tela atual e se adapta a desktop, tablet e celular. A busca e os atalhos do painel abrem os registros já filtrados.
+Revisão visual baseada no painel de erros de lançamento indicado pelo solicitante: fonte Manrope hospedada no próprio projeto, ícones vetoriais, cartões de indicadores, blocos de disponibilidade e movimentação, pendências agrupadas por empréstimo e formulário de empréstimo com lateral em textura de madeira, sem frases ou etapas nessa lateral. A navegação acompanha a tela atual e se adapta a desktop, tablet e celular. A busca e os atalhos do painel abrem os registros já filtrados.
 
 O gráfico distribui as unidades dos empréstimos entre em circulação, devolvidas e baixadas; representa movimentações, não equipamentos físicos únicos. Os indicadores operacionais e o estoque continuam baseados na mesma base compartilhada. Nenhuma migração de dados é necessária para essa revisão visual. A fonte Manrope acompanha sua licença OFL em `public/assets/Manrope-OFL.txt`.
 
@@ -51,7 +51,7 @@ Ao acessar ou recarregar o site, o formulário de novo empréstimo abre automati
 
 - Cadastros de transportadoras, motoristas e veículos, com pesquisa, edição, inativação e reativação. Exclusão disponível para registros sem vínculos.
 - Novos nomes e placas são cadastrados automaticamente ao confirmar um empréstimo. Selecionar motorista ou veículo pode preencher a transportadora vinculada.
-- Empréstimo com múltiplos EPIs, verificação de disponibilidade e vínculo por atendimento.
+- Empréstimo com múltiplos EPIs, verificação de disponibilidade e vínculo entre os itens.
 - Devolução total ou parcial com identificação do funcionário responsável.
 - Registro separado de perda pela portaria: EPI e quantidade, responsável, data e relato obrigatório. A ocorrência recebe protocolo e fica vinculada ao empréstimo. Ela encerra apenas a quantidade perdida, sem aumentar o disponível. Os relatos podem ser consultados em Empréstimos e devoluções.
 - Estoque simplificado: EPI, quantidade disponível e ações. Informe a quantidade que está fisicamente disponível; o sistema ajusta o saldo sem apagar empréstimos ou devoluções.
@@ -82,7 +82,7 @@ Os relatos ficam em **Empréstimos e devoluções → Relatos de perda ou dano**
 
 ## Dados existentes
 
-A revisão 2.5 não altera a estrutura do banco nem apaga os registros existentes. A importação de bases antigas e a recuperação de dados são procedimentos técnicos; não há uma área de backup na interface. Renomear um cadastro continua preservando o texto histórico dos empréstimos anteriores.
+A revisão 2.6 não altera a estrutura do banco nem apaga os registros existentes. A importação de bases antigas e a recuperação de dados são procedimentos técnicos; não há uma área de backup na interface. Renomear um cadastro continua preservando o texto histórico dos empréstimos anteriores.
 
 ## Usar PostgreSQL externo (opcional)
 
@@ -126,3 +126,5 @@ package-lock.json        versões reproduzíveis
 ```
 
 Crédito original preservado: Aguinaldo Fernando de Jesus — Analista Fiscal.
+
+A identificação interna de agrupamento não é exibida nas telas, avisos ou relatórios. Os itens do mesmo empréstimo continuam vinculados para devolução e registro de perda.

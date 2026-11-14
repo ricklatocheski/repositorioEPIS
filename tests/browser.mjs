@@ -1,7 +1,7 @@
 import { chromium } from "playwright";
 import assert from "node:assert/strict";
 import { randomUUID } from "node:crypto";
-import { mkdir } from "node:fs/promises";
+import { mkdir, readFile } from "node:fs/promises";
 import { initialState } from "../server/model.mjs";
 
 // Uses the local development server only, never a production site.
@@ -302,9 +302,20 @@ try {
     document.getElementById("relFim").value = "";
     renderReport();
   });
+  assert.deepEqual(await page.locator('#relResumo b').allTextContents(),['1','3','1','1','1']);
+  assert.equal(await page.evaluate(()=>relHeader.includes('Atendimento')),false);
+  assert.equal(await page.evaluate(()=>relLinhas()[0].length),14);
   const exportEvent = page.waitForEvent("download");
   await page.getByRole("button", { name: "Exportar CSV", exact: true }).click();
-  assert.ok((await exportEvent).suggestedFilename().endsWith(".csv"));
+  const csvDownload=await exportEvent;
+  assert.ok(csvDownload.suggestedFilename().endsWith(".csv"));
+  const csvText=await readFile(await csvDownload.path(),'utf8');
+  assert.equal(csvText.includes('Atendimento'),false);
+  assert.equal(csvText.includes(await page.evaluate(()=>db.loans[0].grupo)),false);
+  const excelEvent=page.waitForEvent('download');
+  await page.getByRole('button',{name:'Exportar Excel (.xls)',exact:true}).click();
+  const excelDownload=await excelEvent;const excelText=await readFile(await excelDownload.path(),'utf8');
+  assert.deepEqual([...excelText.matchAll(/ss:Type="Number">([^<]+)/g)].map(m=>Number(m[1])),[1,3,1,1,1]);
   const popupEvent = page.waitForEvent("popup");
   await page
     .getByRole("button", { name: "Imprimir / Salvar PDF", exact: true })

@@ -69,7 +69,7 @@ function render() {
       db.stock.reduce((a, s) => a + outstanding(s.nome), 0),
     ],
     [
-      "Atendimentos pendentes",
+      "Empréstimos pendentes",
       new Set(pending.map((l) => l.grupo || l.id)).size,
     ],
     ["Perdidos / danificados", db.loans.reduce((a, l) => a + l.lost, 0)],
@@ -87,7 +87,6 @@ function render() {
     rows([
       [
         "ID",
-        "Atendimento",
         "Data",
         "Motorista",
         "Transportadora",
@@ -102,7 +101,6 @@ function render() {
       ],
       ...ls.map((l) => [
         safe(l.id),
-        safe(l.grupo || "—"),
         fmt(l.quando),
         safe(l.motorista),
         safe(l.transportadora),
@@ -141,8 +139,7 @@ function render() {
           l.placa,
           l.epi,
           String(l.id),
-          l.grupo || "",
-        ]
+          ]
           .join(" ")
           .toLowerCase()
           .includes(q),
@@ -231,7 +228,6 @@ function relDados() {
 }
 const relHeader = [
   "ID",
-  "Atendimento",
   "Data e hora",
   "Motorista",
   "Transportadora",
@@ -252,7 +248,6 @@ function relLinhas() {
     ? null
     : data.map((l) => [
         l.id,
-        l.grupo || "",
         fmt(l.quando),
         l.motorista,
         l.transportadora,
@@ -293,12 +288,12 @@ function renderReport() {
   $("relAviso").textContent = linhas.length
     ? "Relatório com " +
       linhas.length +
-      " item(ns) de empréstimo. Um atendimento com vários EPIs aparece em linhas separadas."
+      " item(ns) de empréstimo. Cada tipo de EPI aparece em uma linha."
     : "Nenhum empréstimo encontrado para os filtros selecionados.";
-  let total = linhas.reduce((a, l) => a + Number(l[7]), 0),
-    pend = linhas.reduce((a, l) => a + Number(l[10]), 0),
-    devol = linhas.reduce((a, l) => a + Number(l[8]), 0),
-    perdas = linhas.reduce((a, l) => a + Number(l[9]), 0);
+  let total = linhas.reduce((a, l) => a + Number(l[6]), 0),
+    pend = linhas.reduce((a, l) => a + Number(l[9]), 0),
+    devol = linhas.reduce((a, l) => a + Number(l[7]), 0),
+    perdas = linhas.reduce((a, l) => a + Number(l[8]), 0);
   $("relResumo").innerHTML = [
     ["Registros", linhas.length],
     ["Unidades emprestadas", total],
@@ -375,7 +370,7 @@ function excelReport() {
             .map(
               (v, j) =>
                 '<Cell><Data ss:Type="' +
-                (i > 0 && [0, 7, 8, 9, 10].includes(j) ? "Number" : "String") +
+                (i > 0 && [0, 6, 7, 8, 9].includes(j) ? "Number" : "String") +
                 '">' +
                 esc(v) +
                 "</Data></Cell>",
@@ -528,8 +523,7 @@ $("loanForm").onsubmit = async (e) => {
   alert(
     "Empréstimo registrado com " +
       items.length +
-      " item(ns). Protocolo: " +
-      group,
+      " item(ns).",
   );
   tab("registros");
 };
@@ -546,16 +540,14 @@ function abrirDevolucao(id) {
     )
     .map((l) => l.id);
   if (!grupoDevolucao.length)
-    return alert("Este atendimento não possui itens pendentes.");
+    return alert("Este empréstimo não possui itens pendentes.");
   $("resumoDevolucao").textContent =
     "Motorista: " +
     alvo.motorista +
     " | Transportadora: " +
     alvo.transportadora +
     " | Placa: " +
-    alvo.placa +
-    " | Protocolo: " +
-    (alvo.grupo || alvo.id);
+    alvo.placa;
   $("listaDevolucao").innerHTML = grupoDevolucao
     .map((id) => {
       let l = db.loans.find((x) => x.id === id),
@@ -923,7 +915,7 @@ function renderDashboard() {
       "loans",
     ],
     [
-      "Atendimentos em aberto",
+      "Empréstimos em aberto",
       groups.size,
       "Empréstimos com itens pendentes",
       "clock",
@@ -1070,8 +1062,8 @@ function renderDashboard() {
       recent.length +
       " de " +
       groups.size +
-      " atendimentos em aberto"
-    : "Todos os atendimentos estão em dia.";
+      " empréstimos em aberto"
+    : "Todos os empréstimos estão em dia.";
 }
 const originalRender = render;
 render = function () {
@@ -1847,7 +1839,7 @@ function abrirPerda(id) {
       (loan.grupo ? l.grupo === loan.grupo : l.id === id) &&
       status(l) === "Pendente",
   );
-  if (!items.length) return alert("Este atendimento não tem itens pendentes.");
+  if (!items.length) return alert("Este empréstimo não tem itens pendentes.");
   lossOrigin = document.activeElement;
   $("lossForm").reset();
   $("lossDate").value = localNow();
@@ -1857,9 +1849,7 @@ function abrirPerda(id) {
     " · " +
     loan.transportadora +
     " · " +
-    loan.placa +
-    " · Atendimento " +
-    (loan.grupo || loan.id);
+    loan.placa;
   $("lossItems").innerHTML = items
     .map((l) => {
       const pending = l.quantidade - l.returned - l.lost;
