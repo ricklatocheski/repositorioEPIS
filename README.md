@@ -1,10 +1,10 @@
 # Controle de EPIs · Balança
 
-Sistema sem página de login, com interface inspirada no catálogo Guararapes enviado pelo solicitante. Inclui cadastros reutilizáveis, empréstimos com múltiplos EPIs, devoluções parciais, perdas, estoque, relatórios e backup.
+Sistema sem página de login, com interface inspirada no catálogo Guararapes enviado pelo solicitante. Inclui cadastros reutilizáveis, empréstimos com múltiplos EPIs, devoluções parciais, perdas, estoque e relatórios.
 
-### Layout 2.2
+### Layout e tela de entrada 2.3
 
-Revisão visual baseada no painel de erros de lançamento indicado pelo solicitante: fonte Manrope hospedada no próprio projeto, ícones vetoriais, cartões de indicadores, blocos de disponibilidade e movimentação, pendências agrupadas por atendimento e formulário de empréstimo com lateral em textura de madeira. A navegação acompanha a tela atual e se adapta a desktop, tablet e celular. A busca e os atalhos do painel abrem os registros já filtrados.
+Revisão visual baseada no painel de erros de lançamento indicado pelo solicitante: fonte Manrope hospedada no próprio projeto, ícones vetoriais, cartões de indicadores, blocos de disponibilidade e movimentação, pendências agrupadas por atendimento e formulário de empréstimo com lateral em textura de madeira, sem frases ou etapas nessa lateral. A navegação acompanha a tela atual e se adapta a desktop, tablet e celular. A busca e os atalhos do painel abrem os registros já filtrados.
 
 O gráfico distribui as unidades dos empréstimos entre em circulação, devolvidas e baixadas; representa movimentações, não equipamentos físicos únicos. Os indicadores operacionais e o estoque continuam baseados na mesma base compartilhada. Nenhuma migração de dados é necessária para essa revisão visual. A fonte Manrope acompanha sua licença OFL em `public/assets/Manrope-OFL.txt`.
 
@@ -43,6 +43,10 @@ Abra `http://localhost:8888`. O servidor local utiliza **PGlite**, um PostgreSQL
 
 O `npm run build` gera a interface em `dist/`. As funções são empacotadas pelo Netlify durante o deploy. Não é necessário PHP ou Python; o servidor usa JavaScript no runtime Node.js das Functions.
 
+## Entrada no sistema
+
+Ao acessar ou recarregar o site, o formulário de novo empréstimo abre automaticamente sobre o painel após a conexão com o banco. Ele reúne motorista, transportadora, placa, WhatsApp, EPIs, quantidades, funcionário da balança, data e observações. Feche pelo X, pela tecla Escape ou pelo fundo para consultar o painel; o preenchimento em andamento é preservado ao reabrir. O botão Novo empréstimo abre a mesma janela. A confirmação salva a entrega e abre os empréstimos registrados. Não há menus de Backup e dados ou Preferências.
+
 ## Funcionalidades
 
 - Cadastros de transportadoras, motoristas e veículos, com pesquisa, edição, inativação e reativação. Exclusão disponível para registros sem vínculos.
@@ -51,8 +55,6 @@ O `npm run build` gera a interface em `dist/`. As funções são empacotadas pel
 - Devolução total ou parcial, registro de perdas/danos e identificação do funcionário responsável.
 - Cadastro de EPI, contagem inicial, entradas, baixas avulsas, mínimo, edição e arquivamento.
 - Painel com disponibilidade e pendências, filtros e relatórios por período, exportação CSV, Excel XML `.xls` e impressão para PDF.
-- Preferências de unidade e funcionário padrão, salvas no banco compartilhado.
-- Backup JSON completo e restauração dos formatos atual e anterior.
 - Atualização automática a cada cinco segundos, preservando os campos em preenchimento. Durante uma janela de edição aberta, alterações recebidas aguardam seu fechamento. Alertas aparecem somente em falhas; bloqueio de duplo envio e conflitos continuam ativos.
 - WhatsApp opcional no cadastro do motorista e no novo empréstimo, com preenchimento automático e link para abrir a conversa. Nenhuma mensagem é enviada automaticamente.
 - Layout responsivo, foco nos diálogos e operação por teclado.
@@ -65,18 +67,13 @@ O banco contém `epi_state` (estado operacional completo, em JSONB, com revisão
 
 O agregado versionado permite gravar estoque, empréstimos, devoluções e cadastros na **mesma transação**. O servidor valida os registros, os saldos, os vínculos e o histórico de devoluções; bloqueia alterações com revisão desatualizada; usa bloqueio de linha e idempotência para repetição de requisições. O log técnico é gravado na mesma transação. Não há gravação de dados operacionais no GitHub, nem dependência do armazenamento do navegador.
 
-Esta versão recebe estados de até **3 MB**, com no máximo **15 mil linhas de empréstimo** e **500 tipos de EPI**. Para volumes maiores, planeje paginação e endpoints por entidade. O histórico de auditoria registra resumos, não cópias restauráveis de cada revisão. Use backup JSON e os recursos de recuperação do provedor de banco.
+Esta versão recebe estados de até **3 MB**, com no máximo **15 mil linhas de empréstimo** e **500 tipos de EPI**. Para volumes maiores, planeje paginação e endpoints por entidade. O histórico de auditoria registra resumos, não cópias restauráveis de cada revisão. Use os recursos de recuperação do provedor de banco.
 
-O sistema permanece **sem autenticação**, conforme solicitado. Qualquer pessoa com acesso ao endereço pode consultar e alterar os registros, inclusive restaurar backups. A verificação de origem ajuda a impedir requisições indevidas de outras páginas, mas não substitui autenticação. Não publique tokens, credenciais ou dados reais no repositório público.
+O sistema permanece **sem autenticação**, conforme solicitado. Qualquer pessoa com acesso ao endereço pode consultar e alterar os registros, inclusive por chamadas diretas à API. A verificação de origem ajuda a impedir requisições indevidas de outras páginas, mas não substitui autenticação. Não publique tokens, credenciais ou dados reais no repositório público.
 
-## Migrar os dados do HTML antigo
+## Dados existentes
 
-1. Abra o HTML antigo no navegador onde os dados foram registrados.
-2. Baixe o backup JSON.
-3. No site novo, abra **Backup e dados** e importe o arquivo.
-4. A restauração substitui a base compartilhada após confirmação. Faça um backup da base atual antes.
-
-Cadastros são gerados a partir dos empréstimos antigos quando necessário. Renomear um cadastro mantém o texto histórico dos empréstimos anteriores. Backups com saldo negativo ou devoluções inconsistentes são rejeitados para conferência.
+A revisão 2.3 não altera a estrutura do banco nem apaga os registros existentes. A importação de bases antigas e a recuperação de dados são procedimentos técnicos; não há uma área de backup na interface. Renomear um cadastro continua preservando o texto histórico dos empréstimos anteriores.
 
 ## Usar PostgreSQL externo (opcional)
 

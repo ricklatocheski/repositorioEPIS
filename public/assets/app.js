@@ -697,7 +697,7 @@ async function excluirEpi(i) {
     !confirm(
       'Excluir definitivamente o EPI "' +
         s.nome +
-        '"? Esta operação não poderá ser desfeita sem um backup.',
+        '"? Esta operação não poderá ser desfeita.',
     )
   )
     return;
@@ -816,69 +816,6 @@ function download(name, data, type) {
   a.download = name;
   a.click();
   setTimeout(() => URL.revokeObjectURL(u), 1000);
-}
-function backup() {
-  download(
-    "backup_epis_balanca.json",
-    JSON.stringify(db, null, 2),
-    "application/json",
-  );
-}
-function csv() {
-  let hdr = [
-    "ID",
-    "Atendimento",
-    "Data empréstimo",
-    "Motorista",
-    "Transportadora",
-    "Placa",
-    "EPI",
-    "Quantidade",
-    "Responsável entrega",
-    "Devolvidos",
-    "Perdidos/danificados",
-    "Pendente",
-    "Situação",
-    "Histórico devoluções",
-    "Observações",
-  ];
-  let lines = [
-    hdr,
-    ...db.loans.map((l) => [
-      l.id,
-      l.grupo || "",
-      l.quando,
-      l.motorista,
-      l.transportadora,
-      l.placa,
-      l.epi,
-      l.quantidade,
-      l.responsavel,
-      l.returned,
-      l.lost,
-      l.quantidade - l.returned - l.lost,
-      status(l),
-      l.returns
-        .map(
-          (r) =>
-            `${fmt(r.quando)}: devolvidos ${r.q}, baixa ${r.lostq}, por ${r.who}, ${r.obs}`,
-        )
-        .join(" | "),
-      l.obs,
-    ]),
-  ];
-  download(
-    "historico_epis_balanca.csv",
-    "\ufeff" +
-      lines
-        .map((r) =>
-          r
-            .map((v) => '"' + String(v ?? "").replace(/"/g, '""') + '"')
-            .join(";"),
-        )
-        .join("\r\n"),
-    "text/csv;charset=utf-8",
-  );
 }
 const normalize = (x) =>
   String(x || "")
@@ -1160,6 +1097,12 @@ render = function () {
 
 const originalTab = tab;
 tab = function (id) {
+  if (id === "emprestar") {
+    openLoanWizard();
+    return;
+  }
+  if (!document.querySelector("section#" + id)) return;
+  closeLoanWizard();
   originalTab(id);
   $("breadcrumbCurrent").textContent =
     {
@@ -1169,23 +1112,11 @@ tab = function (id) {
       estoque: "Estoque de EPIs",
       cadastros: "Cadastros",
       relatorios: "Relatórios",
-      backup: "Backup e dados",
-      ajustes: "Preferências",
     }[id] || "Visão geral";
   document.querySelectorAll("[data-tab]").forEach((b) => {
     if (b.dataset.tab === id) b.setAttribute("aria-current", "page");
     else b.removeAttribute("aria-current");
   });
-  if (id === "emprestar") {
-    const f = $("loanForm");
-    if (!f.elements.responsavel.value)
-      f.elements.responsavel.value = db.settings.operator || "";
-  }
-  if (id === "ajustes") {
-    const f = $("settingsForm");
-    f.elements.unit.value = db.settings.unit || "";
-    f.elements.operator.value = db.settings.operator || "";
-  }
   window.scrollTo({ top: 0, behavior: "instant" });
 };
 function renderRegistryOptions() {
@@ -1437,19 +1368,6 @@ async function deleteRegistry(id) {
   )
     toast("Cadastro excluído.");
 }
-$("settingsForm").onsubmit = async (e) => {
-  e.preventDefault();
-  if (
-    await mutate(
-      () =>
-        (db.settings = {
-          unit: e.target.elements.unit.value.trim() || "Controle de EPIs",
-          operator: e.target.elements.operator.value.trim(),
-        }),
-    )
-  )
-    toast("Preferências salvas.");
-};
 // Existing names stay as historical snapshots; IDs connect new loans to reusable records.
 const originalLoanSubmit = $("loanForm").onsubmit;
 $("loanForm").onsubmit = async (e) => {
@@ -1622,30 +1540,6 @@ function validateBackup(data) {
     throw Error("Preferências inválidas");
   return data;
 }
-$("arquivo").onchange = async (e) => {
-  const file = e.target.files[0];
-  if (!file) return;
-  try {
-    const data = validateBackup(JSON.parse(await file.text()));
-    if (
-      confirm(
-        "Substituir os dados atuais pelo backup? Baixe uma cópia dos dados atuais antes de continuar.",
-      )
-    ) {
-      if (
-        await mutate(() => {
-          db = data;
-          ensureRegistry();
-          nextOperation = "restore";
-        })
-      )
-        toast("Backup restaurado com sucesso.");
-    }
-  } catch (err) {
-    alert("Backup inválido: " + err.message);
-  }
-  e.target.value = "";
-};
 // Keep keyboard focus inside visible dialogs and return it to the originating action.
 let modalOrigin = null;
 new MutationObserver((changes) => {
@@ -1680,7 +1574,8 @@ document.addEventListener("keydown", (e) => {
   const modal = document.querySelector(".modal-overlay.open");
   if (!modal) return;
   if (e.key === "Escape") {
-    if (modal.id === "registryModal") closeRegistry();
+    if (modal.id === "loanWizard") closeLoanWizard();
+    else if (modal.id === "registryModal") closeRegistry();
     else if (modal.id === "modalEditar") fecharEditar();
     else fecharDevolucao();
   }
@@ -1708,8 +1603,12 @@ let refreshing = false,
   stateGeneration = 0,
   deferredShared = null;
 function lockUI(locked) {
+  const loanOpen = $("loanWizard").classList.contains("open");
   document
-    .querySelectorAll("main,.sidebar,.modal-overlay")
+    .querySelectorAll("main,.sidebar,.topbar")
+    .forEach((el) => (el.inert = locked || loanOpen));
+  document
+    .querySelectorAll(".modal-overlay")
     .forEach((el) => (el.inert = locked));
 }
 function syncStatus(message, bad = false) {
@@ -1746,6 +1645,7 @@ async function apiRequest(method, body) {
   return result;
 }
 function applyShared(data) {
+  const firstConnection = !sharedReady;
   validateBackup(data.state);
   db = data.state;
   ensureRegistry();
@@ -1757,12 +1657,13 @@ function applyShared(data) {
   render();
   $("networkGate").hidden = true;
   syncStatus("");
+  if (firstConnection) openLoanWizard();
 }
 function flushDeferred() {
   if (
     !deferredShared ||
     isSaving ||
-    document.querySelector(".modal-overlay.open")
+    document.querySelector(".modal-overlay.open:not(#loanWizard)")
   )
     return;
   if (deferredShared.revision > revision) applyShared(deferredShared);
@@ -1783,7 +1684,10 @@ async function refreshShared(automatic = false) {
       syncStatus("");
       return;
     }
-    if (automatic && document.querySelector(".modal-overlay.open")) {
+    if (
+      automatic &&
+      document.querySelector(".modal-overlay.open:not(#loanWizard)")
+    ) {
       deferredShared = data;
       return;
     }
@@ -1900,6 +1804,41 @@ window.addEventListener("beforeunload", (e) => {
     e.returnValue = "";
   }
 });
+let loanOrigin = null;
+function openLoanWizard() {
+  const modal = $("loanWizard");
+  if (modal.classList.contains("open")) return;
+  loanOrigin = document.activeElement;
+  if (!$("loanForm").elements.responsavel.value)
+    $("loanForm").elements.responsavel.value = db.settings.operator || "";
+  modal.classList.add("open");
+  document.body.classList.add("loan-open");
+  lockUI(isSaving);
+  setTimeout(() => {
+    if (modal.classList.contains("open") && !modal.inert)
+      $("loanForm").elements.motorista.focus();
+  }, 0);
+}
+function closeLoanWizard() {
+  if (isSaving) return;
+  const modal = $("loanWizard");
+  if (!modal.classList.contains("open")) return;
+  modal.classList.remove("open");
+  document.body.classList.remove("loan-open");
+  lockUI(false);
+  if (loanOrigin && loanOrigin.isConnected && loanOrigin !== document.body)
+    loanOrigin.focus();
+  else document.querySelector('[data-tab="emprestar"]').focus();
+}
+$("loanWizard").addEventListener("click", (e) => {
+  if (e.target === $("loanWizard")) closeLoanWizard();
+});
+new MutationObserver(() => {
+  const open = $("loanWizard").classList.contains("open");
+  document.body.classList.toggle("loan-open", open);
+  if (!isSaving) lockUI(false);
+}).observe($("loanWizard"), { attributes: true, attributeFilter: ["class"] });
+
 tab("painel");
 lockUI(true);
 refreshShared();

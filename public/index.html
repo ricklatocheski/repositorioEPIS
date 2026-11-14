@@ -98,35 +98,7 @@
             aria-hidden="true"
           >
             <path d="M4 20V10 M10 20V4 M16 20v-7 M22 20H2" /></svg
-          >Relatórios</button
-        ><button data-tab="backup" onclick="tab('backup')">
-          <svg
-            viewBox="0 0 24 24"
-            width="19"
-            height="19"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="1.6"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            aria-hidden="true"
-          >
-            <path d="M12 3v12 M7 10l5 5 5-5 M4 16v5h16v-5" /></svg
-          >Backup e dados</button
-        ><button data-tab="ajustes" onclick="tab('ajustes')">
-          <svg
-            viewBox="0 0 24 24"
-            width="19"
-            height="19"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="1.6"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            aria-hidden="true"
-          >
-            <path d="M4 6h16 M4 12h16 M4 18h16 M8 3v6 M16 9v6 M10 15v6" /></svg
-          >Preferências
+          >Relatórios
         </button>
       </nav>
     </aside>
@@ -327,132 +299,7 @@
           <div class="table-foot" id="recentCount"></div>
         </div>
       </section>
-      <section id="emprestar">
-        <div class="page-heading">
-          <div>
-            <span class="eyebrow">Controle de equipamentos</span>
-            <h1>Novo empréstimo</h1>
-            <p>Registre a entrega e vincule os equipamentos ao motorista.</p>
-          </div>
-        </div>
-        <div class="loan-layout">
-          <aside class="loan-guide">
-            <img src="/assets/marca.png" alt="Guararapes" />
-            <div>
-              <svg
-                viewBox="0 0 24 24"
-                width="19"
-                height="19"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="1.6"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                aria-hidden="true"
-              >
-                <path d="M12 3l8 3v6c0 5-8 9-8 9s-8-4-8-9V6z M8 12l3 3 5-6" />
-              </svg>
-              <h2>Entrega segura.<br />Controle em cada etapa.</h2>
-              <ol>
-                <li><span>01</span>Identifique o motorista</li>
-                <li><span>02</span>Selecione os equipamentos</li>
-                <li><span>03</span>Confira e registre</li>
-              </ol>
-            </div>
-          </aside>
-          <div class="panel loan-panel">
-            <div class="form-section-title">
-              <span>01</span>
-              <h2>Dados do atendimento</h2>
-            </div>
-            <p class="muted">
-              Selecione um cadastro existente ou digite um novo. Os novos dados
-              serão cadastrados ao confirmar o empréstimo.
-            </p>
-            <datalist id="dlMotoristas"></datalist
-            ><datalist id="dlTransportadoras"></datalist
-            ><datalist id="dlVeiculos"></datalist>
-            <form id="loanForm" class="form">
-              <label
-                >Nome do motorista / entregador *<input
-                  name="motorista"
-                  list="dlMotoristas"
-                  autocomplete="off"
-                  placeholder="Selecione ou digite um novo motorista"
-                  required
-                  maxlength="100" /></label
-              ><label
-                >Transportadora *<input
-                  name="transportadora"
-                  list="dlTransportadoras"
-                  autocomplete="off"
-                  placeholder="Selecione ou digite uma transportadora"
-                  required
-                  maxlength="100" /></label
-              ><label
-                >Placa do veículo *<input
-                  name="placa"
-                  list="dlVeiculos"
-                  autocomplete="off"
-                  placeholder="ABC1D23"
-                  pattern="[A-Za-z]{3}-?[0-9][A-Za-z0-9][0-9]{2}"
-                  title="Informe uma placa brasileira válida: ABC1234 ou ABC1D23"
-                  required
-                  maxlength="8"
-                  style="text-transform: uppercase"
-              /></label>
-              <label
-                >WhatsApp do motorista<input
-                  name="whatsapp"
-                  type="tel"
-                  autocomplete="tel"
-                  inputmode="tel"
-                  maxlength="25"
-                  placeholder="(49) 99999-9999"
-                /><small class="muted">Opcional · informe o DDD.</small></label
-              >
-              <div class="wide">
-                <div class="form-section-title">
-                  <span>02</span>
-                  <h3>Equipamentos da entrega</h3>
-                </div>
-                <div id="itensEmprestimo"></div>
-                <div class="actions">
-                  <button
-                    type="button"
-                    class="secondary"
-                    onclick="adicionarItem()"
-                  >
-                    + Adicionar outro EPI
-                  </button>
-                </div>
-                <p class="muted">
-                  Inclua quantos tipos de EPI precisar. Cada item terá seu
-                  próprio saldo e devolução, mas todos estarão vinculados ao
-                  mesmo atendimento.
-                </p>
-              </div>
-              <label
-                >Funcionário da balança *<input
-                  name="responsavel"
-                  required
-                  maxlength="100" /></label
-              ><label
-                >Data e horário *<input
-                  type="datetime-local"
-                  name="quando"
-                  required
-                  id="quando" /></label
-              ><label class="wide"
-                >Observações<input name="obs" maxlength="400"
-              /></label>
-              <div class="actions">
-                <button type="submit">Confirmar empréstimo</button>
-              </div>
-            </form>
-          </div>
-        </div>
-      </section>
+
       <section id="registros">
         <div class="page-heading">
           <div>
@@ -534,7 +381,7 @@
             Use “Editar” para corrigir nome e estoque mínimo. Use “Excluir” para
             retirar um EPI da lista ativa. Se houver histórico, o cadastro será
             arquivado e poderá ser reativado, preservando empréstimos e
-            relatórios. Faça backup antes de excluir.
+            relatórios.
           </p>
         </div>
       </section>
@@ -606,45 +453,7 @@
           <div id="relTabela" class="scroll" style="margin-top: 12px"></div>
         </div>
       </section>
-      <section id="backup">
-        <div class="page-heading">
-          <div>
-            <span class="eyebrow">Controle de equipamentos</span>
-            <h1>Backup e dados</h1>
-            <p>Guarde uma cópia dos registros ou restaure um backup.</p>
-          </div>
-        </div>
-        <div class="panel">
-          <h2>Backup e segurança</h2>
-          <p>
-            Exporte o histórico em CSV para abrir no Excel ou salve um backup
-            JSON para restaurar este sistema.
-          </p>
-          <div class="actions">
-            <button onclick="csv()">Exportar histórico CSV</button
-            ><button onclick="backup()">Baixar backup JSON</button
-            ><label style="display: inline-block"
-              >Importar backup JSON<input
-                type="file"
-                accept="application/json,.json"
-                id="arquivo"
-            /></label>
-          </div>
-          <p class="muted">
-            A importação substitui os dados atuais, após confirmação. O CSV é um
-            relatório, não um backup restaurável.
-          </p>
-        </div>
-        <div class="panel">
-          <h3>Cuidados operacionais</h3>
-          <p>
-            Inspecione e higienize os EPIs antes de disponibilizá-los novamente,
-            quando o compartilhamento for permitido. Controle acesso aos dados
-            pessoais e mantenha cópias de segurança em local autorizado pela
-            empresa.
-          </p>
-        </div>
-      </section>
+
       <section id="cadastros">
         <div class="page-heading">
           <div>
@@ -697,51 +506,7 @@
           </p>
         </div>
       </section>
-      <section id="ajustes">
-        <div class="page-heading">
-          <div>
-            <span class="eyebrow">Controle de equipamentos</span>
-            <h1>Preferências</h1>
-            <p>Personalize os dados da operação.</p>
-          </div>
-        </div>
-        <div class="panel">
-          <h2>Preferências da operação</h2>
-          <p class="muted">
-            Personalize a identificação da unidade e agilize o preenchimento.
-          </p>
-          <form id="settingsForm" class="form">
-            <label
-              >Unidade / setor<input
-                name="unit"
-                maxlength="80"
-                placeholder="Ex.: Unidade Caçador · Balança" /></label
-            ><label
-              >Funcionário da balança padrão<input
-                name="operator"
-                maxlength="100"
-                placeholder="Nome do responsável"
-            /></label>
-            <div class="actions"><button>Salvar preferências</button></div>
-          </form>
-        </div>
-        <div class="panel">
-          <h2>Armazenamento</h2>
-          <p>Banco compartilhado · sem login</p>
-          <p class="muted">
-            Os dados são gravados no banco PostgreSQL pela API. Todos os
-            computadores que abrem este site consultam a mesma base. O backup
-            JSON inclui cadastros, empréstimos, estoque e preferências.
-          </p>
-          <p class="hint">
-            O acesso é direto, sem conta e sem página de login. Quem tiver
-            acesso ao endereço poderá consultar e alterar os registros.
-          </p>
-          <button class="secondary" onclick="tab('backup')">
-            Acessar backups
-          </button>
-        </div>
-      </section>
+
       <div
         class="modal-overlay"
         id="registryModal"
@@ -862,6 +627,131 @@
             </button>
           </div>
         </form>
+      </div>
+    </div>
+    <div class="modal-overlay loan-wizard" id="loanWizard">
+      <div
+        id="emprestar"
+        class="loan-dialog"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="loanWizardTitle"
+        tabindex="-1"
+      >
+        <button
+          type="button"
+          class="loan-close icon-button"
+          aria-label="Fechar novo empréstimo"
+          onclick="closeLoanWizard()"
+        >
+          <svg
+            viewBox="0 0 24 24"
+            width="20"
+            height="20"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="1.8"
+            stroke-linecap="round"
+            aria-hidden="true"
+          >
+            <path d="M6 6l12 12 M18 6L6 18" />
+          </svg>
+        </button>
+
+        <div class="loan-layout">
+          <aside class="loan-guide">
+            <img src="/assets/marca.png" alt="Guararapes" />
+          </aside>
+          <div class="panel loan-panel">
+            <h2 id="loanWizardTitle" class="loan-wizard-title">
+              Novo empréstimo
+            </h2>
+            <p class="muted">
+              Selecione um cadastro existente ou digite um novo. Os novos dados
+              serão cadastrados ao confirmar o empréstimo.
+            </p>
+            <datalist id="dlMotoristas"></datalist
+            ><datalist id="dlTransportadoras"></datalist
+            ><datalist id="dlVeiculos"></datalist>
+            <form id="loanForm" class="form">
+              <label
+                >Nome do motorista / entregador *<input
+                  name="motorista"
+                  list="dlMotoristas"
+                  autocomplete="off"
+                  placeholder="Selecione ou digite um novo motorista"
+                  required
+                  maxlength="100" /></label
+              ><label
+                >Transportadora *<input
+                  name="transportadora"
+                  list="dlTransportadoras"
+                  autocomplete="off"
+                  placeholder="Selecione ou digite uma transportadora"
+                  required
+                  maxlength="100" /></label
+              ><label
+                >Placa do veículo *<input
+                  name="placa"
+                  list="dlVeiculos"
+                  autocomplete="off"
+                  placeholder="ABC1D23"
+                  pattern="[A-Za-z]{3}-?[0-9][A-Za-z0-9][0-9]{2}"
+                  title="Informe uma placa brasileira válida: ABC1234 ou ABC1D23"
+                  required
+                  maxlength="8"
+                  style="text-transform: uppercase"
+              /></label>
+              <label
+                >WhatsApp do motorista<input
+                  name="whatsapp"
+                  type="tel"
+                  autocomplete="tel"
+                  inputmode="tel"
+                  maxlength="25"
+                  placeholder="(49) 99999-9999"
+                /><small class="muted">Opcional · informe o DDD.</small></label
+              >
+              <div class="wide">
+                <div class="form-section-title">
+                  <h3>Equipamentos da entrega</h3>
+                </div>
+                <div id="itensEmprestimo"></div>
+                <div class="actions">
+                  <button
+                    type="button"
+                    class="secondary"
+                    onclick="adicionarItem()"
+                  >
+                    + Adicionar outro EPI
+                  </button>
+                </div>
+                <p class="muted">
+                  Inclua quantos tipos de EPI precisar. Cada item terá seu
+                  próprio saldo e devolução, mas todos estarão vinculados ao
+                  mesmo atendimento.
+                </p>
+              </div>
+              <label
+                >Funcionário da balança *<input
+                  name="responsavel"
+                  required
+                  maxlength="100" /></label
+              ><label
+                >Data e horário *<input
+                  type="datetime-local"
+                  name="quando"
+                  required
+                  id="quando" /></label
+              ><label class="wide"
+                >Observações<input name="obs" maxlength="400"
+              /></label>
+              <div class="actions">
+                <button type="submit">Confirmar empréstimo</button>
+              </div>
+            </form>
+          </div>
+        </div>
       </div>
     </div>
     <script defer src="/assets/app.js"></script>

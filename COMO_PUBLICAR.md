@@ -12,4 +12,4 @@
 
 O ZIP contém o código-fonte completo. Se precisar reenviar os arquivos ao GitHub, extraia a pasta e envie seu conteúdo para a raiz do repositório, incluindo `package.json`, `package-lock.json`, `public`, `server`, `netlify`, `scripts` e `netlify.toml`.
 
-O sistema não tem página de login. Quem acessar o endereço pode operar a base. A contagem inicial dos EPIs deve ser informada no menu **Estoque de EPIs**.
+Ao abrir o site, a janela de novo empréstimo aparece automaticamente. Feche pelo X para acessar o painel. O sistema não tem página de login. Quem acessar o endereço pode operar a base. A contagem inicial dos EPIs deve ser informada no menu **Estoque de EPIs**.

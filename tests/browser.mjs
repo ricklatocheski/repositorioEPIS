@@ -44,6 +44,15 @@ page.on("dialog", async (d) => {
 const ready = async () => {
   await page.locator("#networkGate").waitFor({ state: "hidden" });
   await page.waitForFunction(() => !isSaving);
+  await page.locator("#loanWizard.open").waitFor({ state: "visible" });
+  assert.equal(
+    await page.locator("#loanForm [name=motorista]").isVisible(),
+    true,
+  );
+  assert.equal(await page.locator(".loan-guide").innerText(), "");
+  await page
+    .getByRole("button", { name: "Fechar novo empréstimo", exact: true })
+    .click();
 };
 const settled = async () => {
   await page.waitForFunction(() => !isSaving);
@@ -61,6 +70,12 @@ try {
     0,
   );
   assert.equal(await page.locator("#syncError").isVisible(), false);
+  assert.equal(
+    await page
+      .locator("[data-tab=backup],[data-tab=ajustes],#backup,#ajustes")
+      .count(),
+    0,
+  );
   assert.equal(await page.evaluate(() => revision), 1 + existing.revision);
   await page.evaluate(() => tab("cadastros"));
   await page
@@ -77,9 +92,16 @@ try {
     .click();
   await page.locator("#registryName").fill("Motorista de Teste");
   await page.locator("#registryWhatsapp").fill("abc");
-  await page.getByRole("button",{name:"Salvar cadastro",exact:true}).click();
-  assert.equal(await page.locator('#registryModal').evaluate(el=>el.classList.contains('open')),true);
-  assert.equal(await page.evaluate(()=>db.registries.motoristas.length),0);
+  await page
+    .getByRole("button", { name: "Salvar cadastro", exact: true })
+    .click();
+  assert.equal(
+    await page
+      .locator("#registryModal")
+      .evaluate((el) => el.classList.contains("open")),
+    true,
+  );
+  assert.equal(await page.evaluate(() => db.registries.motoristas.length), 0);
   await page.locator("#registryWhatsapp").fill("(49) 99999-1234");
   await page
     .locator("#registryCarrier")
@@ -88,7 +110,10 @@ try {
     .getByRole("button", { name: "Salvar cadastro", exact: true })
     .click();
   await settled();
-  assert.equal(await page.locator('a.whatsapp-link').getAttribute('href'),'https://wa.me/5549999991234');
+  assert.equal(
+    await page.locator("a.whatsapp-link").getAttribute("href"),
+    "https://wa.me/5549999991234",
+  );
   await page.evaluate(() => tab("estoque"));
   await page.locator("#stockForm [name=nome]").fill("Capacete");
   await page.locator("#stockForm [name=qtd]").fill("10");
@@ -164,13 +189,20 @@ try {
   other.on("dialog", (d) => d.accept());
   await other.evaluate(() => {
     revision -= 1;
-    tab("ajustes");
-    document.querySelector("#settingsForm [name=unit]").value = "Conflito";
+    tab("cadastros");
+    registryTab("transportadoras");
+    openRegistry(db.registries.transportadoras[0].id);
+    $("registryNotes").value = "Conflito";
   });
-  await other.locator("#settingsForm button").click();
+  await other
+    .locator(
+      "#registryForm button[type=submit],#registryForm button:not([type])",
+    )
+    .click();
   await other.waitForFunction(() => !isSaving);
   assert.notEqual(
-    (await (await fetch(base + "/api/state")).json()).state.settings.unit,
+    (await (await fetch(base + "/api/state")).json()).state.registries
+      .transportadoras[0].notes,
     "Conflito",
   );
   await other.waitForFunction(() => !needsRefresh && !refreshing);
@@ -193,15 +225,6 @@ try {
     await page.evaluate(() => db.registries.motoristas[0].active),
     false,
   );
-  const backup = await page.evaluate(() => JSON.stringify(db));
-  await page.evaluate(() => tab("backup"));
-  await page.locator("#arquivo").setInputFiles({
-    name: "backup.json",
-    mimeType: "application/json",
-    buffer: Buffer.from(backup),
-  });
-  await settled();
-  assert.equal(await page.evaluate(() => db.loans.length), 1);
   await page.evaluate(() => {
     tab("relatorios");
     clearReport();
@@ -212,20 +235,29 @@ try {
   const exportEvent = page.waitForEvent("download");
   await page.getByRole("button", { name: "Exportar CSV", exact: true }).click();
   assert.ok((await exportEvent).suggestedFilename().endsWith(".csv"));
-  const popupEvent=page.waitForEvent('popup');
-  await page.getByRole('button',{name:'Imprimir / Salvar PDF',exact:true}).click();
-  const report=await popupEvent;await report.waitForLoadState();
+  const popupEvent = page.waitForEvent("popup");
+  await page
+    .getByRole("button", { name: "Imprimir / Salvar PDF", exact: true })
+    .click();
+  const report = await popupEvent;
+  await report.waitForLoadState();
   assert.ok(await report.locator('link[href="/assets/report.css"]').count());
   await report.close();
   // Network failure must not claim success or keep a changed local setting.
   await context.setOffline(true);
-  await page.evaluate(() => tab("ajustes"));
-  await page.locator("#settingsForm [name=unit]").fill("Offline não salva");
-  await page.locator("#settingsForm button").click();
+  await page.evaluate(() => {
+    tab("cadastros");
+    registryTab("transportadoras");
+    openRegistry(db.registries.transportadoras[0].id);
+  });
+  await page.locator("#registryNotes").fill("Offline não salva");
+  await page
+    .getByRole("button", { name: "Salvar cadastro", exact: true })
+    .click();
   await page.waitForFunction(() => !isSaving);
   assert.equal(await page.evaluate(() => needsRefresh), true);
   assert.notEqual(
-    await page.evaluate(() => db.settings.unit),
+    await page.evaluate(() => db.registries.transportadoras[0].notes),
     "Offline não salva",
   );
   await context.setOffline(false);
@@ -234,6 +266,7 @@ try {
     {},
     { timeout: 12000 },
   );
+  await page.evaluate(() => closeRegistry());
   await page.setViewportSize({ width: 390, height: 844 });
   for (const tabName of [
     "painel",
@@ -242,8 +275,6 @@ try {
     "estoque",
     "registros",
     "relatorios",
-    "backup",
-    "ajustes",
   ]) {
     await page.evaluate((id) => tab(id), tabName);
     assert.equal(
@@ -256,13 +287,15 @@ try {
   }
   assert.deepEqual(errors, []);
   await mkdir("test-results", { recursive: true });
-  await page.evaluate(()=>{$('toast').style.display='none'});
+  await page.evaluate(() => {
+    $("toast").style.display = "none";
+  });
   await page.evaluate(() => tab("painel"));
   await page.screenshot({ path: "test-results/mobile.png", fullPage: true });
   await page.setViewportSize({ width: 1440, height: 1100 });
   await page.screenshot({ path: "test-results/desktop.png", fullPage: true });
   console.log(
-    "PASS: interface + API + banco, dois dispositivos, conflito, perda de conexão, histórico, backup, CSV e telas móveis.",
+    "PASS: interface + API + banco, dois dispositivos, conflito, perda de conexão, abertura automática, histórico, CSV e telas móveis.",
   );
   await context2.close();
 } finally {

@@ -7,9 +7,10 @@ Validação atualizada em 14/11/2026:
 - Dois contextos de navegador independentes consultaram a mesma base pela API. As alterações foram recebidas automaticamente, preservando um formulário em preenchimento. Uma gravação com revisão desatualizada foi rejeitada sem apagar a atualização anterior e os dados foram recarregados automaticamente.
 - Falha de conexão recusou a gravação, sem emitir confirmação de sucesso, e o sistema retomou a atualização automaticamente quando a rede voltou.
 - Textos de conexão/revisão, identificação no canto superior direito, legenda do menu, bloco inferior da barra lateral, rodapé de autoria e banner promocional removidos conforme solicitado.
-- Restauração de backup e exportação CSV verificadas.
+- Restauração técnica verificada nos testes da API; exportação CSV e impressão para PDF verificadas no navegador.
 - Todas as telas verificadas em largura móvel de 390 px, sem transbordamento horizontal da página.
-- Revisão visual 2.2 conferida nas oito telas em larguras de 390, 768, 1024 e 1440 px; busca, atalhos para pendências, fonte e formulário de empréstimo também verificados.
+- Revisão visual 2.3 conferida nas seis telas em larguras de 390, 768, 1024 e 1440 px; busca, atalhos para pendências, fonte e formulário de empréstimo também verificados.
+- Abertura automática do formulário após conectar ao banco; campos, fechamento pelo X e Escape, preservação do rascunho, foco dentro da janela e recuperação da conexão verificados. Menus de Backup e dados e Preferências removidos.
 - `npm run build` aprovado.
 - `netlify build --offline` aprovou build e empacotamento da Function `api.mjs`.
 - `npm audit --omit=dev --audit-level=high`: nenhuma vulnerabilidade encontrada.
