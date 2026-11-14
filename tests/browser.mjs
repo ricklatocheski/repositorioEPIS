@@ -91,7 +91,7 @@ try {
     .getByRole("button", { name: "＋ Novo cadastro", exact: true })
     .click();
   await page.locator("#registryName").fill("Motorista de Teste");
-  await page.locator("#registryWhatsapp").fill("abc");
+  await page.locator("#registryWhatsapp").fill("42");
   await page
     .getByRole("button", { name: "Salvar cadastro", exact: true })
     .click();
@@ -151,6 +151,41 @@ try {
     ),
     8,
   );
+  // Changing only the available count must preserve open loans and past returns.
+  await page.evaluate(() => {
+    tab("estoque");
+    abrirEditar(db.stock.findIndex((s) => s.nome === "Capacete"));
+  });
+  await page.locator("#editAvailable").fill("5");
+  await page
+    .locator("#formEditar button[type=submit],#formEditar button:not([type])")
+    .click();
+  await settled();
+  assert.equal(
+    await page.evaluate(() =>
+      available(db.stock.find((s) => s.nome === "Capacete")),
+    ),
+    5,
+  );
+  assert.equal(await page.evaluate(() => outstanding("Capacete")), 1);
+  await page.locator("#stockForm [name=nome]").fill("Capacete");
+  await page.locator("#stockForm [name=qtd]").fill("8");
+  await page.locator("#stockForm button").click();
+  await settled();
+  assert.equal(
+    await page.evaluate(() =>
+      available(db.stock.find((s) => s.nome === "Capacete")),
+    ),
+    8,
+  );
+  assert.equal(await page.evaluate(() => db.loans[0].returned), 1);
+  assert.deepEqual(await page.locator("#estoqueTabela th").allTextContents(), [
+    "EPI",
+    "Disponível",
+    "Ações",
+  ]);
+  await mkdir("test-results", { recursive: true });
+  await page.screenshot({ path: "test-results/stock.png", fullPage: true });
   // Separate context represents another device, with no shared localStorage.
   const context2 = await browser.newContext();
   const other = await context2.newPage();

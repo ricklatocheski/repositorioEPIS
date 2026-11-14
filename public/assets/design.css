@@ -1346,3 +1346,44 @@ body.loan-open {
     right: 10px;
   }
 }
+
+.stock-explanation {
+  font-size: 11px;
+  line-height: 1.9;
+  color: #7c876e;
+  padding: 14px 17px;
+  background: #f6f8f0;
+  border: 1px solid #e8eddc;
+  border-radius: 7px;
+  margin: 20px 0;
+}
+.available-count {
+  font-size: 17px;
+  color: #4b6240;
+  font-weight: 800;
+}
+.available-count small {
+  font-size: 10px;
+  font-weight: 500;
+  color: #8c957e;
+}
+.inactive-stock {
+  margin-top: 22px;
+  font-size: 11px;
+  color: #7e896f;
+}
+.inactive-stock summary {
+  cursor: pointer;
+  font-weight: 600;
+  padding: 10px 0;
+}
+#stockNames {
+  display: none;
+}
+#estoqueTabela td:first-child {
+  width: 45%;
+  font-weight: 600;
+}
+#estoqueTabela td:nth-child(2) {
+  width: 25%;
+}

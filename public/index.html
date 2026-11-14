@@ -332,57 +332,47 @@
         <div class="page-heading">
           <div>
             <span class="eyebrow">Controle de equipamentos</span>
-            <h1>Estoque de EPIs</h1>
-            <p>Gerencie quantidades, movimentações e níveis de reposição.</p>
+            <h1>Estoque disponível</h1>
+            <p>
+              Informe a quantidade que está fisicamente disponível para
+              emprestar.
+            </p>
           </div>
         </div>
         <div class="panel">
-          <h2>Cadastro e movimentação de estoque</h2>
+          <h2>Atualizar quantidade disponível</h2>
           <form id="stockForm" class="form">
             <label
               >Nome do EPI *<input
                 name="nome"
+                list="stockNames"
                 required
                 maxlength="90"
-                placeholder="Ex.: Colete refletivo" /></label
+                placeholder="Selecione ou digite o EPI" /></label
+            ><datalist id="stockNames"></datalist
             ><label
-              >Quantidade de ajuste *<input
+              >Quantidade disponível *<input
                 name="qtd"
                 type="number"
                 min="0"
                 step="1"
                 required
-                value="0" /></label
-            ><label
-              >Tipo de movimentação<select name="tipo">
-                <option value="inicial">Definir estoque inicial</option>
-                <option value="entrada">Adicionar entrada</option>
-                <option value="baixa">Baixa avulsa / descarte</option>
-                <option value="minimo">Definir estoque mínimo</option>
-              </select></label
-            >
+                placeholder="Ex.: 10"
+            /></label>
             <div class="actions">
               <button type="submit">Salvar estoque</button>
             </div>
           </form>
-          <p class="muted">
-            Para cadastrar um novo EPI, digite o nome e defina o estoque
-            inicial. Para atualizar, use exatamente o mesmo nome. Perdas
-            registradas nas devoluções já são descontadas automaticamente.
+          <p class="stock-explanation">
+            Exemplo: se há 10 capacetes disponíveis e você empresta 2, o
+            disponível passa para 8. Quando os 2 voltam, passa para 10. O
+            sistema faz essa conta automaticamente.
           </p>
           <div id="estoqueTabela" class="scroll"></div>
-          <details style="margin-top: 18px">
-            <summary style="cursor: pointer; font-weight: 650">
-              EPIs excluídos / arquivados (reativar)
-            </summary>
+          <details class="inactive-stock">
+            <summary>EPIs inativos</summary>
             <div id="estoqueArquivados" class="scroll"></div>
           </details>
-          <p class="muted">
-            Use “Editar” para corrigir nome e estoque mínimo. Use “Excluir” para
-            retirar um EPI da lista ativa. Se houver histórico, o cadastro será
-            arquivado e poderá ser reativado, preservando empréstimos e
-            relatórios.
-          </p>
         </div>
       </section>
       <section id="relatorios">
@@ -529,8 +519,10 @@
                 type="tel"
                 autocomplete="tel"
                 inputmode="tel"
-                maxlength="25"
-                placeholder="(49) 99999-9999"
+                maxlength="20"
+                placeholder="(42) 99999-9999"
+                pattern="\([1-9][0-9]\) [0-9]{4,5}-[0-9]{4}|\+[1-9][0-9]{7,14}"
+                title="Informe o DDD e o número, por exemplo (42) 99999-9999"
               /><small class="muted"
                 >Opcional · números brasileiros recebem o código +55.</small
               ></label
@@ -609,16 +601,17 @@
           <label class="wide"
             >Nome do EPI *<input id="editNome" maxlength="90" required /></label
           ><label
-            >Estoque mínimo *<input
-              id="editMinimo"
+            >Quantidade disponível *<input
+              id="editAvailable"
               type="number"
               min="0"
               step="1"
               required
           /></label>
           <p class="wide muted">
-            O estoque inicial e as movimentações permanecem inalterados. Para
-            corrigir quantidades, utilize as movimentações de estoque.
+            Informe somente as unidades disponíveis agora. Os itens emprestados
+            continuam registrados e voltam ao disponível quando forem
+            devolvidos.
           </p>
           <div class="actions wide">
             <button type="submit">Salvar alterações</button
@@ -708,8 +701,10 @@
                   type="tel"
                   autocomplete="tel"
                   inputmode="tel"
-                  maxlength="25"
-                  placeholder="(49) 99999-9999"
+                  maxlength="20"
+                  placeholder="(42) 99999-9999"
+                  pattern="\([1-9][0-9]\) [0-9]{4,5}-[0-9]{4}|\+[1-9][0-9]{7,14}"
+                  title="Informe o DDD e o número, por exemplo (42) 99999-9999"
                 /><small class="muted">Opcional · informe o DDD.</small></label
               >
               <div class="wide">

@@ -153,34 +153,14 @@ function render() {
   atualizarEpisRelatorio();
   renderReport();
   $("estoqueTabela").innerHTML = rows([
-    [
-      "EPI",
-      "Inicial",
-      "Entradas",
-      "Baixas avulsas",
-      "Perdas em empréstimos",
-      "Em aberto",
-      "Disponível",
-      "Mínimo",
-      "Situação",
-      "Ação",
-    ],
+    ["EPI", "Disponível", "Ações"],
     ...db.stock
       .filter((s) => !s.arquivado)
       .map((s) => [
         safe(s.nome),
-        s.inicial,
-        s.entradas,
-        s.baixas,
-        lost(s.nome),
-        outstanding(s.nome),
-        available(s),
-        s.minimo,
-        available(s) < 0
-          ? "CONFERIR"
-          : available(s) <= s.minimo
-            ? "REPOR"
-            : "OK",
+        '<strong class="available-count">' +
+          available(s) +
+          "<small> unidades</small></strong>",
         '<div class="group-actions"><button class="secondary" onclick="abrirEditar(' +
           db.stock.indexOf(s) +
           ')">Editar</button><button class="danger" onclick="excluirEpi(' +
@@ -188,6 +168,10 @@ function render() {
           ')">Excluir</button></div>',
       ]),
   ]);
+  $("stockNames").innerHTML = db.stock
+    .filter((s) => !s.arquivado)
+    .map((s) => '<option value="' + safe(s.nome) + '"></option>')
+    .join("");
   $("estoqueArquivados").innerHTML = db.stock.some((s) => s.arquivado)
     ? rows([
         ["EPI", "Em aberto", "Ação"],
@@ -728,7 +712,7 @@ function abrirEditar(i) {
   if (!s) return;
   editIndex = i;
   $("editNome").value = s.nome;
-  $("editMinimo").value = s.minimo;
+  $("editAvailable").value = available(s);
   $("modalEditar").classList.add("open");
   $("editNome").focus();
 }
@@ -736,79 +720,77 @@ function fecharEditar() {
   $("modalEditar").classList.remove("open");
   editIndex = -1;
 }
+function setAvailableStock(stock, desired) {
+  const difference = desired - available(stock);
+  if (difference > 0) stock.entradas += difference;
+  else if (difference < 0) stock.baixas -= difference;
+}
 $("formEditar").onsubmit = async (e) => {
   e.preventDefault();
-  let s = db.stock[editIndex];
-  if (!s) return;
-  let nome = $("editNome").value.trim(),
-    minimo = Number($("editMinimo").value);
-  if (!nome || !Number.isInteger(minimo) || minimo < 0)
-    return alert("Informe nome e mínimo válidos.");
+  const stock = db.stock[editIndex];
+  if (!stock) return;
+  const name = $("editNome").value.trim(),
+    quantity = Number($("editAvailable").value);
+  if (!name || !Number.isSafeInteger(quantity) || quantity < 0)
+    return alert("Informe o nome e uma quantidade disponível válida.");
   if (
     db.stock.some(
-      (x, i) =>
-        i !== editIndex &&
-        x.nome.toLocaleLowerCase("pt-BR") === nome.toLocaleLowerCase("pt-BR"),
+      (s, i) => i !== editIndex && normalize(s.nome) === normalize(name),
     )
   )
     return alert("Já existe outro EPI com esse nome.");
-  let antes = JSON.stringify(db),
-    antigo = s.nome;
-  s.nome = nome;
-  s.minimo = minimo;
+  const before = JSON.stringify(db),
+    oldName = stock.nome;
+  stock.nome = name;
   db.loans.forEach((l) => {
-    if (l.epi === antigo) l.epi = nome;
+    if (l.epi === oldName) l.epi = name;
   });
+  setAvailableStock(stock, quantity);
   if (!(await save())) {
-    db = JSON.parse(antes);
+    db = JSON.parse(before);
     render();
     return;
   }
   fecharEditar();
-  alert("EPI atualizado. Os empréstimos anteriores foram preservados.");
+  alert("EPI atualizado. Os empréstimos permanecem registrados.");
 };
 $("stockForm").onsubmit = async (e) => {
   e.preventDefault();
-  let v = Object.fromEntries(new FormData(e.target));
-  let nome = v.nome.trim(),
-    q = Number(v.qtd);
-  if (!nome || !Number.isInteger(q) || q < 0) return alert("Dados inválidos");
-  let antes = JSON.stringify(db);
-  let s = db.stock.find((x) => x.nome.toLowerCase() === nome.toLowerCase());
-  if (s && s.arquivado)
+  const name = e.target.elements.nome.value.trim(),
+    quantity = Number(e.target.elements.qtd.value);
+  if (!name || !Number.isSafeInteger(quantity) || quantity < 0)
+    return alert("Informe o EPI e a quantidade disponível.");
+  const before = JSON.stringify(db);
+  let stock = db.stock.find((s) => normalize(s.nome) === normalize(name));
+  if (stock?.arquivado)
     return alert(
-      "Este EPI está arquivado. Reative-o na seção EPIs excluídos / arquivados antes de movimentar o estoque.",
+      "Este EPI está inativo. Reative-o na lista de EPIs inativos antes de atualizar.",
     );
-  if (!s) {
-    s = { nome, inicial: 0, entradas: 0, baixas: 0, minimo: 2 };
-    db.stock.push(s);
-  }
-  if (v.tipo === "inicial") {
-    if (
-      db.loans.some((l) => l.epi === s.nome) ||
-      s.entradas > 0 ||
-      s.baixas > 0
-    ) {
-      return alert(
-        "O estoque inicial só pode ser definido antes de movimentações. Use entrada ou baixa para ajustes.",
-      );
-    }
-    s.inicial = q;
-  }
-  if (v.tipo === "entrada") s.entradas += q;
-  if (v.tipo === "baixa") {
-    if (q > available(s)) return alert("Baixa superior ao estoque disponível");
-    s.baixas += q;
-  }
-  if (v.tipo === "minimo") s.minimo = q;
+  if (!stock) {
+    stock = {
+      nome: name,
+      inicial: quantity,
+      entradas: 0,
+      baixas: 0,
+      minimo: 2,
+    };
+    db.stock.push(stock);
+  } else setAvailableStock(stock, quantity);
   if (!(await save())) {
-    db = JSON.parse(antes);
+    db = JSON.parse(before);
     render();
     return;
   }
   e.target.reset();
-  alert("Estoque atualizado.");
+  alert("Quantidade disponível atualizada.");
 };
+$("stockForm").elements.nome.addEventListener("input", (e) => {
+  const stock = db.stock.find(
+    (s) => !s.arquivado && normalize(s.nome) === normalize(e.target.value),
+  );
+  if (stock) $("stockForm").elements.qtd.value = available(stock);
+});
+
 function download(name, data, type) {
   let a = document.createElement("a"),
     u = URL.createObjectURL(new Blob([data], { type }));
@@ -942,9 +924,9 @@ function renderDashboard() {
       "clock",
     ],
     [
-      "Reposição necessária",
-      stocks.filter((s) => available(s) <= s.minimo).length,
-      "Tipos de EPI no estoque mínimo",
+      "EPIs sem estoque",
+      stocks.filter((s) => available(s) === 0).length,
+      "Tipos de EPI com saldo zerado",
       "alert",
     ],
   ];
@@ -977,14 +959,14 @@ function renderDashboard() {
             safe(s.nome) +
             "</strong><small>" +
             (total === 0
-              ? "Contagem inicial pendente"
-              : av <= s.minimo
-                ? "Reposição necessária"
+              ? "Sem unidades disponíveis"
+              : av === 0
+                ? "Sem unidades disponíveis"
                 : outstanding(s.nome) + " em circulação") +
             '</small></div><span class="stock-quantity">' +
             av +
             '<small>disponíveis</small></span><div class="stock-track ' +
-            (av <= s.minimo ? "low" : "") +
+            (av === 0 ? "low" : "") +
             '"><i style="width:' +
             percentage +
             '%"></i></div></div>'
@@ -1804,6 +1786,46 @@ window.addEventListener("beforeunload", (e) => {
     e.returnValue = "";
   }
 });
+function maskWhatsAppInput(input) {
+  const raw = input.value;
+  let digits = raw.replace(/\D/g, "");
+  let cursorDigits = raw
+    .slice(0, input.selectionStart ?? raw.length)
+    .replace(/\D/g, "").length;
+  // Preserve explicitly international numbers; Brazilian entries use DDD + number.
+  if (raw.trim().startsWith("+") && !digits.startsWith("55")) {
+    input.value = "+" + digits.slice(0, 15);
+    return;
+  }
+  if (digits.startsWith("55") && digits.length > 11) {
+    digits = digits.slice(2);
+    cursorDigits = Math.max(0, cursorDigits - 2);
+  }
+  digits = digits.slice(0, 11);
+  let display = "";
+  if (digits.length) display = "(" + digits.slice(0, 2);
+  if (digits.length >= 2) display += ")";
+  if (digits.length > 2) {
+    const number = digits.slice(2),
+      split = number.length === 8 ? 4 : 5;
+    display +=
+      " " +
+      number.slice(0, split) +
+      (number.length > split ? "-" + number.slice(split) : "");
+  }
+  input.value = display;
+  let seen = 0,
+    position = display.length;
+  for (let i = 0; i < display.length; i++)
+    if (/\d/.test(display[i]) && ++seen === cursorDigits) {
+      position = i + 1;
+      break;
+    }
+  input.setSelectionRange(position, position);
+}
+for (const input of [$("registryWhatsapp"), $("loanForm").elements.whatsapp])
+  input.addEventListener("input", () => maskWhatsAppInput(input));
+
 let loanOrigin = null;
 function openLoanWizard() {
   const modal = $("loanWizard");

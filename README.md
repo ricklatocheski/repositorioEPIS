@@ -2,7 +2,7 @@
 
 Sistema sem página de login, com interface inspirada no catálogo Guararapes enviado pelo solicitante. Inclui cadastros reutilizáveis, empréstimos com múltiplos EPIs, devoluções parciais, perdas, estoque e relatórios.
 
-### Layout e tela de entrada 2.3
+### Layout e tela de entrada 2.4
 
 Revisão visual baseada no painel de erros de lançamento indicado pelo solicitante: fonte Manrope hospedada no próprio projeto, ícones vetoriais, cartões de indicadores, blocos de disponibilidade e movimentação, pendências agrupadas por atendimento e formulário de empréstimo com lateral em textura de madeira, sem frases ou etapas nessa lateral. A navegação acompanha a tela atual e se adapta a desktop, tablet e celular. A busca e os atalhos do painel abrem os registros já filtrados.
 
@@ -53,13 +53,13 @@ Ao acessar ou recarregar o site, o formulário de novo empréstimo abre automati
 - Novos nomes e placas são cadastrados automaticamente ao confirmar um empréstimo. Selecionar motorista ou veículo pode preencher a transportadora vinculada.
 - Empréstimo com múltiplos EPIs, verificação de disponibilidade e vínculo por atendimento.
 - Devolução total ou parcial, registro de perdas/danos e identificação do funcionário responsável.
-- Cadastro de EPI, contagem inicial, entradas, baixas avulsas, mínimo, edição e arquivamento.
+- Estoque simplificado: EPI, quantidade disponível e ações. Informe a quantidade que está fisicamente disponível; o sistema ajusta o saldo sem apagar empréstimos ou devoluções.
 - Painel com disponibilidade e pendências, filtros e relatórios por período, exportação CSV, Excel XML `.xls` e impressão para PDF.
 - Atualização automática a cada cinco segundos, preservando os campos em preenchimento. Durante uma janela de edição aberta, alterações recebidas aguardam seu fechamento. Alertas aparecem somente em falhas; bloqueio de duplo envio e conflitos continuam ativos.
-- WhatsApp opcional no cadastro do motorista e no novo empréstimo, com preenchimento automático e link para abrir a conversa. Nenhuma mensagem é enviada automaticamente.
+- WhatsApp opcional no cadastro do motorista e no novo empréstimo, com máscara de DDD e número, por exemplo `(42) 99999-9999`. O DDD 42 é um exemplo; outros DDDs também são aceitos. O código +55 é acrescentado aos números brasileiros para abrir a conversa. Há preenchimento automático e link; nenhuma mensagem é enviada automaticamente.
 - Layout responsivo, foco nos diálogos e operação por teclado.
 
-Os estoques iniciais estão zerados. Informe a contagem real antes do primeiro empréstimo.
+Os estoques começam zerados. Informe a quantidade disponível real antes do primeiro empréstimo. Exemplo: 10 disponíveis − 2 emprestados = 8 disponíveis; com a devolução dos 2, o disponível volta a 10. Perdas não retornam ao disponível. A edição do disponível não altera a quantidade já emprestada.
 
 ## Banco e integridade
 
@@ -73,7 +73,7 @@ O sistema permanece **sem autenticação**, conforme solicitado. Qualquer pessoa
 
 ## Dados existentes
 
-A revisão 2.3 não altera a estrutura do banco nem apaga os registros existentes. A importação de bases antigas e a recuperação de dados são procedimentos técnicos; não há uma área de backup na interface. Renomear um cadastro continua preservando o texto histórico dos empréstimos anteriores.
+A revisão 2.4 não altera a estrutura do banco nem apaga os registros existentes. A importação de bases antigas e a recuperação de dados são procedimentos técnicos; não há uma área de backup na interface. Renomear um cadastro continua preservando o texto histórico dos empréstimos anteriores.
 
 ## Usar PostgreSQL externo (opcional)
 
