@@ -1,6 +1,6 @@
 {
   "name": "controle-epis-guararapes",
-  "version": "2.6.0",
+  "version": "2.7.0",
   "private": true,
   "type": "module",
   "engines": {
@@ -12,6 +12,7 @@
     "build": "node scripts/build.mjs",
     "test": "node --test tests/api.test.mjs",
     "test:browser": "node tests/browser.mjs",
+    "test:inventory": "node tests/inventory-browser.mjs",
     "db:migrate": "node scripts/migrate.mjs"
   },
   "devDependencies": {

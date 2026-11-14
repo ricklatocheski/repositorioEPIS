@@ -13,7 +13,14 @@ export function initialState() {
       "Protetor auricular",
       "Calçado de segurança",
       "Outros",
-    ].map((nome) => ({ nome, inicial: 0, entradas: 0, baixas: 0, minimo: 2 })),
+    ].map((nome) => ({
+      nome,
+      inicial: 0,
+      entradas: 0,
+      baixas: 0,
+      minimo: 2,
+      cadastrado: false,
+    })),
     loans: [],
     registries: { transportadoras: [], motoristas: [], veiculos: [] },
     settings: { unit: "Controle de EPIs", operator: "" },
@@ -64,6 +71,10 @@ export function validateState(state) {
     check(
       s.arquivado === undefined || typeof s.arquivado === "boolean",
       "Situação do EPI inválida.",
+    );
+    check(
+      s.cadastrado === undefined || typeof s.cadastrado === "boolean",
+      "Identificação de cadastro do EPI inválida.",
     );
     names.add(normalize(s.nome));
     stockByName.set(s.nome, s);

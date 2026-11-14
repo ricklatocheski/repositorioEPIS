@@ -2,11 +2,11 @@
 
 Sistema sem página de login, com interface inspirada no catálogo Guararapes enviado pelo solicitante. Inclui cadastros reutilizáveis, empréstimos com múltiplos EPIs, devoluções parciais, perdas, estoque e relatórios.
 
-### Layout e tela de entrada 2.6
+### Layout e tela de entrada 2.7
 
 Revisão visual baseada no painel de erros de lançamento indicado pelo solicitante: fonte Manrope hospedada no próprio projeto, ícones vetoriais, cartões de indicadores, blocos de disponibilidade e movimentação, pendências agrupadas por empréstimo e formulário de empréstimo com lateral em textura de madeira, sem frases ou etapas nessa lateral. A navegação acompanha a tela atual e se adapta a desktop, tablet e celular. A busca e os atalhos do painel abrem os registros já filtrados.
 
-O gráfico distribui as unidades dos empréstimos entre em circulação, devolvidas e baixadas; representa movimentações, não equipamentos físicos únicos. Os indicadores operacionais e o estoque continuam baseados na mesma base compartilhada. Nenhuma migração de dados é necessária para essa revisão visual. A fonte Manrope acompanha sua licença OFL em `public/assets/Manrope-OFL.txt`.
+O gráfico mostra a situação atual: disponíveis, com motoristas e, quando houver, inativos. Cada unidade física é contada uma vez. Empréstimos antigos e devoluções acumuladas não são somados como novos EPIs. O filtro por EPI aplica o mesmo recorte aos indicadores, gráfico e pendências. Os indicadores operacionais e o estoque continuam baseados na mesma base compartilhada. Nenhuma migração de dados é necessária para essa revisão visual. A fonte Manrope acompanha sua licença OFL em `public/assets/Manrope-OFL.txt`.
 
 [Publicar no Netlify](https://app.netlify.com/start/deploy?repository=https://github.com/ricklatocheski/repositorioEPIS)
 
@@ -54,13 +54,13 @@ Ao acessar ou recarregar o site, o formulário de novo empréstimo abre automati
 - Empréstimo com múltiplos EPIs, verificação de disponibilidade e vínculo entre os itens.
 - Devolução total ou parcial com identificação do funcionário responsável.
 - Registro separado de perda pela portaria: EPI e quantidade, responsável, data e relato obrigatório. A ocorrência recebe protocolo e fica vinculada ao empréstimo. Ela encerra apenas a quantidade perdida, sem aumentar o disponível. Os relatos podem ser consultados em Empréstimos e devoluções.
-- Estoque simplificado: EPI, quantidade disponível e ações. Informe a quantidade que está fisicamente disponível; o sistema ajusta o saldo sem apagar empréstimos ou devoluções.
+- Estoque simplificado: EPI, disponível e ações. No cadastro e na edição, informe a **quantidade total de EPIs existentes**, incluindo os que estão com motoristas. O disponível é calculado automaticamente. Salvar o mesmo total novamente não soma outra entrada. O total não pode ser menor que as unidades ainda com motoristas.
 - Painel com disponibilidade e pendências, filtros e relatórios por período, exportação CSV, Excel XML `.xls` e impressão para PDF.
 - Atualização automática a cada cinco segundos, preservando os campos em preenchimento. Durante uma janela de edição aberta, alterações recebidas aguardam seu fechamento. Alertas aparecem somente em falhas; bloqueio de duplo envio e conflitos continuam ativos.
 - WhatsApp opcional no cadastro do motorista e no novo empréstimo, com máscara de DDD e número, por exemplo `(42) 99999-9999`. O DDD 42 é um exemplo; outros DDDs também são aceitos. O código +55 é acrescentado aos números brasileiros para abrir a conversa. Há preenchimento automático e link; nenhuma mensagem é enviada automaticamente.
 - Layout responsivo, foco nos diálogos e operação por teclado.
 
-Os estoques começam zerados. Informe a quantidade disponível real antes do primeiro empréstimo. Exemplo: 10 disponíveis − 2 emprestados = 8 disponíveis; com a devolução dos 2, o disponível volta a 10. Perdas não retornam ao disponível. A edição do disponível não altera a quantidade já emprestada.
+As sugestões de nomes de EPI não são contadas como cadastros até que exista uma contagem ou movimentação. Cadastre o total real antes de emprestar. Exemplo: **2 coletes existentes − 2 emprestados = 0 disponível**. Salvar novamente o total 2 mantém 0 disponível; uma terceira unidade não pode ser emprestada.
 
 ## Banco e integridade
 
@@ -82,7 +82,7 @@ Os relatos ficam em **Empréstimos e devoluções → Relatos de perda ou dano**
 
 ## Dados existentes
 
-A revisão 2.6 não altera a estrutura do banco nem apaga os registros existentes. A importação de bases antigas e a recuperação de dados são procedimentos técnicos; não há uma área de backup na interface. Renomear um cadastro continua preservando o texto histórico dos empréstimos anteriores.
+A revisão 2.7 não altera a estrutura do banco nem apaga os registros existentes. A importação de bases antigas e a recuperação de dados são procedimentos técnicos; não há uma área de backup na interface. Renomear um cadastro continua preservando o texto histórico dos empréstimos anteriores.
 
 ## Usar PostgreSQL externo (opcional)
 
@@ -106,6 +106,7 @@ npm run dev
 ```sh
 npx playwright install chromium
 npm run test:browser
+npm run test:inventory
 ```
 
 O teste de navegador cria dados temporários na base local, exige que ela esteja sem empréstimos e limpa os dados ao terminar. Pode-se definir `LOCAL_DATA_DIR` no servidor para usar um diretório exclusivo de teste. `CHROME_PATH` permite selecionar um Chrome já instalado. Os testes não aceitam URL de produção.
@@ -128,3 +129,5 @@ package-lock.json        versões reproduzíveis
 Crédito original preservado: Aguinaldo Fernando de Jesus — Analista Fiscal.
 
 A identificação interna de agrupamento não é exibida nas telas, avisos ou relatórios. Os itens do mesmo empréstimo continuam vinculados para devolução e registro de perda.
+
+A regressão de inventário testa dois coletes: empréstimo de duas unidades, bloqueio do terceiro, recadastro do mesmo total sem aumento, devolução e novo empréstimo. Mesmo com três saídas no histórico, o estoque físico continua com duas unidades.

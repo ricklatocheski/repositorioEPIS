@@ -341,3 +341,56 @@ test("perda de todos os itens encerra a pendência, sem repor o estoque", async 
   });
   await assert.rejects(() => commit(invalid), /inconsistentes/);
 });
+test("dois coletes emprestados deixam zero disponível e bloqueiam o terceiro", async () => {
+  const state = stockAndLoan();
+  state.stock[0].inicial = 2;
+  state.loans[0].quantidade = 2;
+  await commit(state, { operation: "restore" });
+  const third = structuredClone(state);
+  third.loans.push({
+    ...third.loans[0],
+    id: 2,
+    grupo: "AT-TERCEIRO",
+    quantidade: 1,
+    returns: [],
+  });
+  await assert.rejects(() => commit(third), /Estoque insuficiente/);
+  assert.equal((await repository.read()).state.loans.length, 1);
+  assert.equal(state.stock[0].inicial - state.loans[0].quantidade, 0);
+});
+test("devolução e novo empréstimo não criam uma terceira unidade física", async () => {
+  const state = (await repository.read()).state;
+  state.loans[0].returned = 1;
+  state.loans[0].returns.push({
+    q: 1,
+    lostq: 0,
+    who: "Recebedor de teste",
+    quando: "2026-11-14T12:00:00Z",
+    obs: "",
+  });
+  await commit(state);
+  state.loans.push({
+    ...state.loans[0],
+    id: 2,
+    grupo: "AT-NOVO-EMPRESTIMO",
+    quantidade: 1,
+    returned: 0,
+    lost: 0,
+    returns: [],
+  });
+  await commit(state);
+  const saved = (await repository.read()).state;
+  const physical =
+    saved.stock[0].inicial + saved.stock[0].entradas - saved.stock[0].baixas;
+  const inUse = saved.loans.reduce(
+    (sum, l) => sum + l.quantidade - l.returned - l.lost,
+    0,
+  );
+  assert.equal(
+    saved.loans.reduce((sum, l) => sum + l.quantidade, 0),
+    3,
+  );
+  assert.equal(physical, 2);
+  assert.equal(inUse, 2);
+  assert.equal(physical - inUse, 0);
+});

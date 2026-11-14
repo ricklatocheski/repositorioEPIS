@@ -191,7 +191,7 @@ try {
     tab("estoque");
     abrirEditar(db.stock.findIndex((s) => s.nome === "Capacete"));
   });
-  await page.locator("#editAvailable").fill("5");
+  await page.locator("#editAvailable").fill("6");
   await page
     .locator("#formEditar button[type=submit],#formEditar button:not([type])")
     .click();
@@ -204,7 +204,7 @@ try {
   );
   assert.equal(await page.evaluate(() => outstanding("Capacete")), 1);
   await page.locator("#stockForm [name=nome]").fill("Capacete");
-  await page.locator("#stockForm [name=qtd]").fill("8");
+  await page.locator("#stockForm [name=qtd]").fill("9");
   await page.locator("#stockForm button").click();
   await settled();
   assert.equal(
@@ -302,20 +302,40 @@ try {
     document.getElementById("relFim").value = "";
     renderReport();
   });
-  assert.deepEqual(await page.locator('#relResumo b').allTextContents(),['1','3','1','1','1']);
-  assert.equal(await page.evaluate(()=>relHeader.includes('Atendimento')),false);
-  assert.equal(await page.evaluate(()=>relLinhas()[0].length),14);
+  assert.deepEqual(await page.locator("#relResumo b").allTextContents(), [
+    "1",
+    "3",
+    "1",
+    "1",
+    "1",
+  ]);
+  assert.equal(
+    await page.evaluate(() => relHeader.includes("Atendimento")),
+    false,
+  );
+  assert.equal(await page.evaluate(() => relLinhas()[0].length), 14);
   const exportEvent = page.waitForEvent("download");
   await page.getByRole("button", { name: "Exportar CSV", exact: true }).click();
-  const csvDownload=await exportEvent;
+  const csvDownload = await exportEvent;
   assert.ok(csvDownload.suggestedFilename().endsWith(".csv"));
-  const csvText=await readFile(await csvDownload.path(),'utf8');
-  assert.equal(csvText.includes('Atendimento'),false);
-  assert.equal(csvText.includes(await page.evaluate(()=>db.loans[0].grupo)),false);
-  const excelEvent=page.waitForEvent('download');
-  await page.getByRole('button',{name:'Exportar Excel (.xls)',exact:true}).click();
-  const excelDownload=await excelEvent;const excelText=await readFile(await excelDownload.path(),'utf8');
-  assert.deepEqual([...excelText.matchAll(/ss:Type="Number">([^<]+)/g)].map(m=>Number(m[1])),[1,3,1,1,1]);
+  const csvText = await readFile(await csvDownload.path(), "utf8");
+  assert.equal(csvText.includes("Atendimento"), false);
+  assert.equal(
+    csvText.includes(await page.evaluate(() => db.loans[0].grupo)),
+    false,
+  );
+  const excelEvent = page.waitForEvent("download");
+  await page
+    .getByRole("button", { name: "Exportar Excel (.xls)", exact: true })
+    .click();
+  const excelDownload = await excelEvent;
+  const excelText = await readFile(await excelDownload.path(), "utf8");
+  assert.deepEqual(
+    [...excelText.matchAll(/ss:Type="Number">([^<]+)/g)].map((m) =>
+      Number(m[1]),
+    ),
+    [1, 3, 1, 1, 1],
+  );
   const popupEvent = page.waitForEvent("popup");
   await page
     .getByRole("button", { name: "Imprimir / Salvar PDF", exact: true })

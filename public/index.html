@@ -176,6 +176,11 @@
           </div>
         </div>
         <div class="dashboard-toolbar">
+          <label class="overview-epi-filter"
+            >EPI<select id="overviewEpi" onchange="render()">
+              <option value="">Todos os EPIs</option>
+            </select></label
+          >
           <form
             class="overview-search"
             onsubmit="event.preventDefault();$('busca').value=$('overviewSearch').value;$('filtro').value='';tab('registros')"
@@ -246,14 +251,14 @@
             </div>
             <div id="stockOverview"></div>
             <div class="panel-note">
-              Disponível = estoque total − baixas − unidades em circulação
+              Cada EPI aparece uma única vez no saldo atual.
             </div>
           </div>
           <div class="panel circulation-panel">
             <div class="section-heading">
               <div>
-                <h2>Movimentações de EPIs</h2>
-                <p>Distribuição das unidades emprestadas</p>
+                <h2>Situação do estoque</h2>
+                <p>Disponíveis e em uso neste momento</p>
               </div>
               <svg
                 viewBox="0 0 24 24"
@@ -346,13 +351,13 @@
             <span class="eyebrow">Controle de equipamentos</span>
             <h1>Estoque disponível</h1>
             <p>
-              Informe a quantidade que está fisicamente disponível para
-              emprestar.
+              O disponível é calculado pelo total cadastrado menos os itens que
+              estão com os motoristas.
             </p>
           </div>
         </div>
         <div class="panel">
-          <h2>Atualizar quantidade disponível</h2>
+          <h2>Cadastrar ou conferir quantidade total</h2>
           <form id="stockForm" class="form">
             <label
               >Nome do EPI *<input
@@ -363,7 +368,7 @@
                 placeholder="Selecione ou digite o EPI" /></label
             ><datalist id="stockNames"></datalist
             ><label
-              >Quantidade disponível *<input
+              >Quantidade total de EPIs *<input
                 name="qtd"
                 type="number"
                 min="0"
@@ -376,9 +381,9 @@
             </div>
           </form>
           <p class="stock-explanation">
-            Exemplo: se há 10 capacetes disponíveis e você empresta 2, o
-            disponível passa para 8. Quando os 2 voltam, passa para 10. O
-            sistema faz essa conta automaticamente.
+            Informe quantos EPIs existem ao todo, incluindo os que estão
+            emprestados. Exemplo: 2 coletes cadastrados e 2 com motoristas = 0
+            disponível. Salvar 2 novamente mantém o total em 2.
           </p>
           <div id="estoqueTabela" class="scroll"></div>
           <details class="inactive-stock">
@@ -614,7 +619,7 @@
           <label class="wide"
             >Nome do EPI *<input id="editNome" maxlength="90" required /></label
           ><label
-            >Quantidade disponível *<input
+            >Quantidade total de EPIs *<input
               id="editAvailable"
               type="number"
               min="0"
@@ -622,9 +627,8 @@
               required
           /></label>
           <p class="wide muted">
-            Informe somente as unidades disponíveis agora. Os itens emprestados
-            continuam registrados e voltam ao disponível quando forem
-            devolvidos.
+            Informe o total de EPIs existentes, incluindo os que estão com
+            motoristas. O disponível será calculado automaticamente.
           </p>
           <div class="actions wide">
             <button type="submit">Salvar alterações</button

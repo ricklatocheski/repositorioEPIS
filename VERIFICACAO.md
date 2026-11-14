@@ -2,14 +2,14 @@
 
 Validação atualizada em 14/11/2026:
 
-- 14 testes automatizados da API aprovados, usando PostgreSQL em memória via PGlite, incluindo persistência e validação do WhatsApp.
+- 16 testes automatizados da API aprovados, usando PostgreSQL em memória via PGlite, incluindo persistência e validação do WhatsApp.
 - Fluxo no Chrome aprovado: cadastros, vínculo de transportadora, estoque inicial, empréstimo, devolução parcial com perda, edição sem recriar cadastro antigo e persistência após recarregar.
 - Dois contextos de navegador independentes consultaram a mesma base pela API. As alterações foram recebidas automaticamente, preservando um formulário em preenchimento. Uma gravação com revisão desatualizada foi rejeitada sem apagar a atualização anterior e os dados foram recarregados automaticamente.
 - Falha de conexão recusou a gravação, sem emitir confirmação de sucesso, e o sistema retomou a atualização automaticamente quando a rede voltou.
 - Textos de conexão/revisão, identificação no canto superior direito, legenda do menu, bloco inferior da barra lateral, rodapé de autoria e banner promocional removidos conforme solicitado.
 - Restauração técnica verificada nos testes da API; exportação CSV e impressão para PDF verificadas no navegador.
 - Todas as telas verificadas em largura móvel de 390 px, sem transbordamento horizontal da página.
-- Revisão visual 2.6 conferida nas seis telas em larguras de 390, 768, 1024 e 1440 px; busca, atalhos para pendências, fonte e formulário de empréstimo também verificados.
+- Revisão visual 2.7 conferida nas seis telas em larguras de 390, 768, 1024 e 1440 px; busca, atalhos para pendências, fonte e formulário de empréstimo também verificados.
 - Abertura automática do formulário após conectar ao banco; campos, fechamento pelo X e Escape, preservação do rascunho, foco dentro da janela e recuperação da conexão verificados. Menus de Backup e dados e Preferências removidos.
 - `npm run build` aprovado.
 - `netlify build --offline` aprovou build e empacotamento da Function `api.mjs`.
@@ -24,3 +24,5 @@ Revisão 2.4: estoque reduzido a EPI, disponível e ações. A edição da quant
 Revisão 2.5: registro separado de perda com responsável da portaria, data, quantidade e relato; consulta da ocorrência e inclusão no histórico exportado. A perda parcial e total não aumentaram o disponível. A falta de relato e a alteração do histórico foram rejeitadas pela API.
 
 Revisão 2.6: identificação de atendimento removida da interface, dos avisos e dos relatórios. Totais e tipos numéricos das exportações ajustados à remoção dessa coluna. Agrupamento interno e registros de perda preservados.
+
+Revisão 2.7: gráfico limitado ao saldo físico atual, filtro por EPI, sugestões sem contagem excluídas dos cadastros efetivos e cadastro pelo total existente. Regressão aprovada: dois coletes em uso deixam zero disponível; terceiro bloqueado; salvar o total 2 novamente não cria outra unidade; três saídas históricas não viram três unidades físicas.

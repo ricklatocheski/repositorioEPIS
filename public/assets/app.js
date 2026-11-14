@@ -42,6 +42,54 @@ function lost(nome) {
 function available(s) {
   return s.inicial + s.entradas - s.baixas - lost(s.nome) - outstanding(s.nome);
 }
+function stockRegistered(stock) {
+  const suggestion = [
+    "Colete refletivo",
+    "Capacete",
+    "Óculos de proteção",
+    "Protetor auricular",
+    "Calçado de segurança",
+    "Outros",
+  ].includes(stock.nome);
+  return (
+    stock.cadastrado === true ||
+    stock.inicial > 0 ||
+    stock.entradas > 0 ||
+    stock.baixas > 0 ||
+    db.loans.some((loan) => loan.epi === stock.nome) ||
+    (stock.cadastrado === undefined && !suggestion)
+  );
+}
+function stockPhysicalTotal(stock) {
+  return stock.inicial + stock.entradas - stock.baixas - lost(stock.nome);
+}
+function inventorySnapshot(selected = "") {
+  const all = db.stock.filter(stockRegistered),
+    selectedStocks = all.filter(
+      (stock) => !selected || stock.nome === selected,
+    );
+  const active = selectedStocks.filter((stock) => !stock.arquivado),
+    inactive = selectedStocks.filter((stock) => stock.arquivado);
+  const free = active.reduce((sum, stock) => sum + available(stock), 0),
+    inUse = selectedStocks.reduce(
+      (sum, stock) => sum + outstanding(stock.nome),
+      0,
+    ),
+    inactiveFree = inactive.reduce((sum, stock) => sum + available(stock), 0);
+  return {
+    all,
+    active,
+    free,
+    inUse,
+    inactiveFree,
+    total: free + inUse + inactiveFree,
+    pending: db.loans.filter(
+      (loan) =>
+        status(loan) === "Pendente" && (!selected || loan.epi === selected),
+    ),
+  };
+}
+
 function rows(a) {
   return (
     "<table><thead><tr>" +
@@ -133,13 +181,7 @@ function render() {
     .filter(
       (l) =>
         (!f || status(l) === f) &&
-        [
-          l.motorista,
-          l.transportadora,
-          l.placa,
-          l.epi,
-          String(l.id),
-          ]
+        [l.motorista, l.transportadora, l.placa, l.epi, String(l.id)]
           .join(" ")
           .toLowerCase()
           .includes(q),
@@ -154,7 +196,7 @@ function render() {
   $("estoqueTabela").innerHTML = rows([
     ["EPI", "Disponível", "Ações"],
     ...db.stock
-      .filter((s) => !s.arquivado)
+      .filter((s) => !s.arquivado && stockRegistered(s))
       .map((s) => [
         safe(s.nome),
         '<strong class="available-count">' +
@@ -167,6 +209,9 @@ function render() {
           ')">Excluir</button></div>',
       ]),
   ]);
+  if (!db.stock.some((s) => !s.arquivado && stockRegistered(s)))
+    $("estoqueTabela").innerHTML =
+      '<div class="empty-state"><strong>Nenhum EPI cadastrado.</strong>Informe o nome e a quantidade total para começar.</div>';
   $("stockNames").innerHTML = db.stock
     .filter((s) => !s.arquivado)
     .map((s) => '<option value="' + safe(s.nome) + '"></option>')
@@ -441,7 +486,7 @@ function atualizarOpcoesItens() {
     sel.innerHTML =
       '<option value="">Selecione um EPI</option>' +
       db.stock
-        .filter((s) => !s.arquivado)
+        .filter((s) => !s.arquivado && stockRegistered(s))
         .map(
           (s) =>
             '<option value="' +
@@ -520,11 +565,7 @@ $("loanForm").onsubmit = async (e) => {
   $("itensEmprestimo").innerHTML = "";
   adicionarItem();
   $("quando").value = localNow();
-  alert(
-    "Empréstimo registrado com " +
-      items.length +
-      " item(ns).",
-  );
+  alert("Empréstimo registrado com " + items.length + " item(ns).");
   tab("registros");
 };
 
@@ -709,7 +750,7 @@ function abrirEditar(i) {
   if (!s) return;
   editIndex = i;
   $("editNome").value = s.nome;
-  $("editAvailable").value = available(s);
+  $("editAvailable").value = stockPhysicalTotal(s);
   $("modalEditar").classList.add("open");
   $("editNome").focus();
 }
@@ -717,8 +758,16 @@ function fecharEditar() {
   $("modalEditar").classList.remove("open");
   editIndex = -1;
 }
-function setAvailableStock(stock, desired) {
-  const difference = desired - available(stock);
+function setStockTotal(stock, desired) {
+  const inUse = outstanding(stock.nome);
+  if (desired < inUse)
+    throw Error(
+      "Há " +
+        inUse +
+        " unidade(s) deste EPI com motoristas. O total não pode ser menor que isso. Para perda confirmada, use Registrar perda.",
+    );
+  const difference = desired - stockPhysicalTotal(stock);
+  stock.cadastrado = true;
   if (difference > 0) stock.entradas += difference;
   else if (difference < 0) stock.baixas -= difference;
 }
@@ -729,7 +778,7 @@ $("formEditar").onsubmit = async (e) => {
   const name = $("editNome").value.trim(),
     quantity = Number($("editAvailable").value);
   if (!name || !Number.isSafeInteger(quantity) || quantity < 0)
-    return alert("Informe o nome e uma quantidade disponível válida.");
+    return alert("Informe o nome e uma quantidade total válida.");
   if (
     db.stock.some(
       (s, i) => i !== editIndex && normalize(s.nome) === normalize(name),
@@ -742,7 +791,12 @@ $("formEditar").onsubmit = async (e) => {
   db.loans.forEach((l) => {
     if (l.epi === oldName) l.epi = name;
   });
-  setAvailableStock(stock, quantity);
+  try {
+    setStockTotal(stock, quantity);
+  } catch (error) {
+    db = JSON.parse(before);
+    return alert(error.message);
+  }
   if (!(await save())) {
     db = JSON.parse(before);
     render();
@@ -756,7 +810,7 @@ $("stockForm").onsubmit = async (e) => {
   const name = e.target.elements.nome.value.trim(),
     quantity = Number(e.target.elements.qtd.value);
   if (!name || !Number.isSafeInteger(quantity) || quantity < 0)
-    return alert("Informe o EPI e a quantidade disponível.");
+    return alert("Informe o EPI e a quantidade total existente.");
   const before = JSON.stringify(db);
   let stock = db.stock.find((s) => normalize(s.nome) === normalize(name));
   if (stock?.arquivado)
@@ -770,22 +824,32 @@ $("stockForm").onsubmit = async (e) => {
       entradas: 0,
       baixas: 0,
       minimo: 2,
+      cadastrado: true,
     };
     db.stock.push(stock);
-  } else setAvailableStock(stock, quantity);
+  } else {
+    try {
+      setStockTotal(stock, quantity);
+    } catch (error) {
+      db = JSON.parse(before);
+      return alert(error.message);
+    }
+  }
   if (!(await save())) {
     db = JSON.parse(before);
     render();
     return;
   }
   e.target.reset();
-  alert("Quantidade disponível atualizada.");
+  alert(
+    "Quantidade total atualizada. O disponível foi calculado automaticamente.",
+  );
 };
 $("stockForm").elements.nome.addEventListener("input", (e) => {
   const stock = db.stock.find(
     (s) => !s.arquivado && normalize(s.nome) === normalize(e.target.value),
   );
-  if (stock) $("stockForm").elements.qtd.value = available(stock);
+  if (stock) $("stockForm").elements.qtd.value = stockPhysicalTotal(stock);
 });
 
 function download(name, data, type) {
@@ -894,12 +958,28 @@ function showPending() {
   tab("registros");
 }
 function renderDashboard() {
-  const stocks = db.stock.filter((s) => !s.arquivado),
-    pending = db.loans.filter((l) => status(l) === "Pendente");
-  const av = stocks.reduce((n, s) => n + available(s), 0),
-    out = db.loans.reduce((n, l) => n + l.quantidade - l.returned - l.lost, 0),
-    returned = db.loans.reduce((n, l) => n + l.returned, 0),
-    loss = db.loans.reduce((n, l) => n + l.lost, 0);
+  const filter = $("overviewEpi"),
+    previous = filter.value,
+    registered = db.stock.filter(stockRegistered);
+  filter.innerHTML =
+    '<option value="">Todos os EPIs</option>' +
+    registered
+      .map(
+        (s) =>
+          '<option value="' +
+          safe(s.nome) +
+          '">' +
+          safe(s.nome) +
+          (s.arquivado ? " (inativo)" : "") +
+          "</option>",
+      )
+      .join("");
+  filter.value = registered.some((s) => s.nome === previous) ? previous : "";
+  const snapshot = inventorySnapshot(filter.value),
+    stocks = snapshot.active,
+    pending = snapshot.pending,
+    av = snapshot.free,
+    out = snapshot.inUse;
   const groups = new Map();
   for (const l of pending) {
     const key = l.grupo || String(l.id);
@@ -907,7 +987,12 @@ function renderDashboard() {
     groups.get(key).push(l);
   }
   const stats = [
-    ["EPIs disponíveis", av, "Prontos para uma nova entrega", "box"],
+    [
+      "EPIs disponíveis",
+      av,
+      filter.value ? filter.value : "Soma dos EPIs cadastrados",
+      "box",
+    ],
     [
       "Unidades em circulação",
       out,
@@ -921,9 +1006,9 @@ function renderDashboard() {
       "clock",
     ],
     [
-      "EPIs sem estoque",
-      stocks.filter((s) => available(s) === 0).length,
-      "Tipos de EPI com saldo zerado",
+      "Tipos de EPI cadastrados",
+      stocks.length,
+      "Equipamentos cadastrados no estoque",
       "alert",
     ],
   ];
@@ -971,48 +1056,48 @@ function renderDashboard() {
         })
         .join("")
     : '<div class="empty-state"><strong>Nenhum equipamento cadastrado.</strong>Cadastre os EPIs para acompanhar a disponibilidade.</div>';
-  const total = out + returned + loss,
-    first = total ? (out / total) * 100 : 0,
-    second = total ? ((out + returned) / total) * 100 : 0;
+  const total = snapshot.total,
+    first = total ? (av / total) * 100 : 0,
+    second = total ? ((av + out) / total) * 100 : 0;
   $("loanDistribution").innerHTML =
     '<div class="donut-wrap"><div class="donut" role="img" aria-label="' +
+    av +
+    " disponíveis e " +
     out +
-    " unidades em circulação, " +
-    returned +
-    " devolvidas e " +
-    loss +
-    ' baixadas" style="background:' +
+    ' com motoristas" style="background:' +
     (total
-      ? "conic-gradient(#7d8d68 0 " +
+      ? "conic-gradient(#b7c7a2 0 " +
         first +
-        "%,#c4cfb0 " +
+        "%,#7d8d68 " +
         first +
         "% " +
         second +
-        "%,#c3ae8c " +
+        "%,#d0c2aa " +
         second +
         "% 100%)"
       : "#edf0e7") +
     '"><div><strong>' +
     String(total).padStart(2, "0") +
-    '</strong><small>unidades emprestadas</small></div></div></div><div class="distribution-legend">' +
+    '</strong><small>EPIs existentes agora</small></div></div></div><div class="distribution-legend">' +
     [
-      ["Em circulação", out, "circulating"],
-      ["Devolvidas", returned, "returned"],
-      ["Perdidas / danificadas", loss, "loss"],
+      ["Disponíveis", av, "returned"],
+      ["Com motoristas", out, "circulating"],
+      ...(snapshot.inactiveFree
+        ? [["Inativos", snapshot.inactiveFree, "loss"]]
+        : []),
     ]
       .map(
-        ([label, n, color]) =>
+        ([label, number, color]) =>
           '<div><span><i class="' +
           color +
           '"></i>' +
           label +
           "</span><strong>" +
-          n +
+          number +
           "</strong></div>",
       )
       .join("") +
-    "</div>";
+    '</div><p class="panel-note">Empréstimos antigos não são somados novamente ao estoque.</p>';
   const recent = [...groups.values()].reverse().slice(0, 5);
   $("recentes").innerHTML = recent.length
     ? rows([
@@ -1845,11 +1930,7 @@ function abrirPerda(id) {
   $("lossDate").value = localNow();
   lossDraftId = "PERDA-" + Date.now() + "-" + crypto.randomUUID().slice(0, 8);
   $("lossLoanSummary").textContent =
-    loan.motorista +
-    " · " +
-    loan.transportadora +
-    " · " +
-    loan.placa;
+    loan.motorista + " · " + loan.transportadora + " · " + loan.placa;
   $("lossItems").innerHTML = items
     .map((l) => {
       const pending = l.quantidade - l.returned - l.lost;

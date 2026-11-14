@@ -9,6 +9,6 @@ await mkdir("dist", { recursive: true });
 await cp("public", "dist", { recursive: true });
 await writeFile(
   "dist/version.json",
-  JSON.stringify({ version: "2.6.0", builtAt: new Date().toISOString() }),
+  JSON.stringify({ version: "2.7.0", builtAt: new Date().toISOString() }),
 );
 console.log("Build concluído: interface em dist/; API em netlify/functions/.");
